@@ -161,16 +161,6 @@ tags: ${article.tags?.map((t) => t.name).join(', ') || ''}
         {/* Article Header */}
         <div className="border-b">
           <div className="p-4 md:p-8">
-            {/* Back button - Desktop only */}
-            <div className="hidden md:block mb-4">
-              <button
-                onClick={() => navigate('/')}
-                className="text-blue-600 hover:text-blue-800 text-sm"
-              >
-                ← 記事一覧に戻る
-              </button>
-            </div>
-
             {/* Title */}
             <h1 className="text-2xl md:text-3xl font-bold mb-4">{article.title}</h1>
 

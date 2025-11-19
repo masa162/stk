@@ -139,8 +139,6 @@ export default function ArticleList() {
 
         {/* Desktop Header */}
         <div className="hidden md:block p-8 border-b">
-          <h1 className="text-3xl font-bold mb-4">記事一覧</h1>
-
           {/* Search Field */}
           <div className="mb-4">
             <div className="flex gap-2">
