@@ -234,9 +234,9 @@ export default function ArticleList() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {article.category_id && (
+                        {article.category && (
                           <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-800">
-                            Category {article.category_id}
+                            {article.category.name}
                           </span>
                         )}
                       </td>

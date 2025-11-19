@@ -65,9 +65,41 @@ export async function getArticles(db: D1Database): Promise<ArticleMetadata[]> {
     }
   }
 
-  // Attach tags to articles
+  // Batch load categories (solve N+1 problem)
+  const categoryIds = [...new Set(articles.map(a => a.category_id).filter((id): id is number => id !== null))];
+  const categoryMap = new Map<number, any>();
+
+  if (categoryIds.length > 0) {
+    for (let i = 0; i < categoryIds.length; i += BATCH_SIZE) {
+      const batch = categoryIds.slice(i, i + BATCH_SIZE);
+      const placeholders = batch.map(() => "?").join(",");
+
+      const { results: categoryResults } = await db
+        .prepare(
+          `
+          SELECT id, name, color, created_at
+          FROM categories
+          WHERE id IN (${placeholders})
+        `
+        )
+        .bind(...batch)
+        .all();
+
+      for (const row of categoryResults as any[]) {
+        categoryMap.set(row.id, {
+          id: row.id,
+          name: row.name,
+          color: row.color,
+          created_at: row.created_at,
+        });
+      }
+    }
+  }
+
+  // Attach tags and categories to articles
   for (const article of articles) {
     article.tags = tagMap.get(article.id) || [];
+    article.category = article.category_id ? categoryMap.get(article.category_id) : undefined;
   }
 
   return articles;
