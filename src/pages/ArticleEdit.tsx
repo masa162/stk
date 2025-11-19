@@ -4,6 +4,12 @@ import type { Article, Tag } from '../lib/db/types'
 import Sidebar from '../components/Sidebar'
 import ScrollTop from '../components/ScrollTop'
 
+interface Category {
+  id: number
+  name: string
+  color: string
+}
+
 export default function ArticleEdit() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -11,15 +17,19 @@ export default function ArticleEdit() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [memo, setMemo] = useState('')
+  const [categoryId, setCategoryId] = useState<number | null>(null)
+  const [tags, setTags] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [allTags, setAllTags] = useState<Tag[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (id) {
       fetchArticle(parseInt(id))
       fetchTags()
+      fetchCategories()
     }
   }, [id])
 
@@ -36,6 +46,8 @@ export default function ArticleEdit() {
       setTitle(article.title)
       setContent(article.content || '')
       setMemo(article.memo || '')
+      setCategoryId(article.category_id)
+      setTags(article.tags?.map((t: Tag) => t.name).join(', ') || '')
     } catch (error) {
       console.error('Failed to fetch article:', error)
     } finally {
@@ -57,6 +69,20 @@ export default function ArticleEdit() {
     }
   }
 
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories', {
+        headers: {
+          Authorization: 'Basic ' + btoa('mn:39'),
+        },
+      })
+      const data = await response.json()
+      setCategories(data.categories || [])
+    } catch (error) {
+      console.error('Failed to fetch categories:', error)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -66,6 +92,12 @@ export default function ArticleEdit() {
     }
 
     setSubmitting(true)
+
+    // Parse tags
+    const tagArray = tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
 
     try {
       const response = await fetch(`/api/articles/${id}`, {
@@ -78,6 +110,8 @@ export default function ArticleEdit() {
           title,
           content,
           memo: memo || undefined,
+          category_id: categoryId,
+          tags: tagArray.length > 0 ? tagArray : undefined,
         }),
       })
 
@@ -187,6 +221,40 @@ export default function ArticleEdit() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="メモを入力（任意）"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  カテゴリ
+                </label>
+                <select
+                  value={categoryId || ''}
+                  onChange={(e) => setCategoryId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">未分類</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  タグ
+                </label>
+                <input
+                  type="text"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="例: AI, メモ, アイデア（カンマ区切り）"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  タグをカンマ区切りで入力してください
+                </p>
               </div>
 
               <div>

@@ -14,6 +14,7 @@ export default function ArticleList() {
   // Filters
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null)
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [sortColumn, setSortColumn] = useState<'title' | 'created_at' | 'updated_at'>('created_at')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
@@ -64,6 +65,12 @@ export default function ArticleList() {
     if (selectedTagId !== null) {
       const hasTag = article.tags?.some((tag) => tag.id === selectedTagId)
       if (!hasTag) return false
+    }
+    if (searchKeyword.trim()) {
+      const keyword = searchKeyword.toLowerCase()
+      const matchTitle = article.title.toLowerCase().includes(keyword)
+      const matchMemo = article.memo?.toLowerCase().includes(keyword)
+      if (!matchTitle && !matchMemo) return false
     }
     return true
   })
@@ -132,9 +139,32 @@ export default function ArticleList() {
 
         {/* Desktop Header */}
         <div className="hidden md:block p-8 border-b">
-          <h1 className="text-3xl font-bold">記事一覧</h1>
-          <div className="text-sm text-gray-500 mt-2">
+          <h1 className="text-3xl font-bold mb-4">記事一覧</h1>
+
+          {/* Search Field */}
+          <div className="mb-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="タイトルやメモから検索..."
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {searchKeyword && (
+                <button
+                  onClick={() => setSearchKeyword('')}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  クリア
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="text-sm text-gray-500">
             {filteredArticles.length}件の記事
+            {searchKeyword && ` (「${searchKeyword}」で検索中)`}
           </div>
         </div>
 
