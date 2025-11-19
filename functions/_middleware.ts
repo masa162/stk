@@ -51,7 +51,7 @@ app.get('/api/articles', async (c) => {
 })
 
 // GET /api/articles/:id - 記事詳細取得
-app.get('/articles/:id', async (c) => {
+app.get('/api/articles/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'))
     const storage = new ArticleStorage({ bucket: c.env.ARTICLES_BUCKET })
@@ -102,7 +102,7 @@ app.post('/api/articles', async (c) => {
 })
 
 // PUT /api/articles/:id - 記事更新
-app.put('/articles/:id', async (c) => {
+app.put('/api/articles/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'))
     const body = await c.req.json<{
@@ -128,7 +128,7 @@ app.put('/articles/:id', async (c) => {
 })
 
 // DELETE /api/articles/:id - 記事削除（ゴミ箱へ）
-app.delete('/articles/:id', async (c) => {
+app.delete('/api/articles/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'))
     const success = await deleteArticle(c.env.DB, id)
@@ -156,7 +156,7 @@ app.get('/api/trash', async (c) => {
 })
 
 // POST /api/trash/:id - 記事を復元
-app.post('/trash/:id', async (c) => {
+app.post('/api/trash/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'))
     const success = await restoreArticle(c.env.DB, id)
@@ -247,7 +247,7 @@ app.post('/api/categories', async (c) => {
 })
 
 // PUT /api/categories/:id - カテゴリ更新
-app.put('/categories/:id', async (c) => {
+app.put('/api/categories/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'))
     const body = await c.req.json<{ name: string; color?: string }>()
@@ -269,7 +269,7 @@ app.put('/categories/:id', async (c) => {
 })
 
 // DELETE /api/categories/:id - カテゴリ削除
-app.delete('/categories/:id', async (c) => {
+app.delete('/api/categories/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'))
 
@@ -283,7 +283,7 @@ app.delete('/categories/:id', async (c) => {
 })
 
 // POST /api/categories/reorder - カテゴリ並び替え
-app.post('/categories/reorder', async (c) => {
+app.post('/api/categories/reorder', async (c) => {
   try {
     const body = await c.req.json<{ categoryIds: number[] }>()
     const { categoryIds } = body
