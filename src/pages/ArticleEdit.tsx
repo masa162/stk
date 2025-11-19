@@ -116,7 +116,6 @@ export default function ArticleEdit() {
       })
 
       if (response.ok) {
-        alert('記事を更新しました')
         navigate(`/articles/${id}`)
       } else {
         alert('更新に失敗しました')

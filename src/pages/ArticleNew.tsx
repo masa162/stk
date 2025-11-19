@@ -88,9 +88,7 @@ export default function ArticleNew() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        alert('記事を作成しました')
-        navigate(`/articles/${data.id}`)
+        navigate('/')
       } else {
         alert('作成に失敗しました')
       }
