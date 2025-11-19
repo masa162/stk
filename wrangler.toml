@@ -1,0 +1,12 @@
+name = "stk"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "stuck-db"
+database_id = "89ed51c8-0869-4192-af68-48fa1c601cc3"
+
+[[r2_buckets]]
+binding = "ARTICLES_BUCKET"
+bucket_name = "stuck-articles"
