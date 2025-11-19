@@ -32,30 +32,37 @@ export async function getArticles(db: D1Database): Promise<ArticleMetadata[]> {
   if (articleIds.length === 0) return [];
 
   // Batch load tags (solve N+1 problem)
-  const placeholders = articleIds.map(() => "?").join(",");
-  const { results: tagResults } = await db
-    .prepare(
-      `
-      SELECT at.article_id, t.id, t.name, t.created_at
-      FROM article_tags at
-      INNER JOIN tags t ON at.tag_id = t.id
-      WHERE at.article_id IN (${placeholders})
-    `
-    )
-    .bind(...articleIds)
-    .all();
-
-  // Map tags to articles
+  // D1 has a limit on SQL variables, so we need to batch them
   const tagMap = new Map<number, Tag[]>();
-  for (const row of tagResults as any[]) {
-    if (!tagMap.has(row.article_id)) {
-      tagMap.set(row.article_id, []);
+  const BATCH_SIZE = 50; // Safe limit for SQL variables
+
+  for (let i = 0; i < articleIds.length; i += BATCH_SIZE) {
+    const batch = articleIds.slice(i, i + BATCH_SIZE);
+    const placeholders = batch.map(() => "?").join(",");
+
+    const { results: tagResults } = await db
+      .prepare(
+        `
+        SELECT at.article_id, t.id, t.name, t.created_at
+        FROM article_tags at
+        INNER JOIN tags t ON at.tag_id = t.id
+        WHERE at.article_id IN (${placeholders})
+      `
+      )
+      .bind(...batch)
+      .all();
+
+    // Map tags to articles
+    for (const row of tagResults as any[]) {
+      if (!tagMap.has(row.article_id)) {
+        tagMap.set(row.article_id, []);
+      }
+      tagMap.get(row.article_id)!.push({
+        id: row.id,
+        name: row.name,
+        created_at: row.created_at,
+      });
     }
-    tagMap.get(row.article_id)!.push({
-      id: row.id,
-      name: row.name,
-      created_at: row.created_at,
-    });
   }
 
   // Attach tags to articles
