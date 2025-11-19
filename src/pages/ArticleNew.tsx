@@ -1,5 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { Tag } from '../lib/db/types'
+import Sidebar from '../components/Sidebar'
+import ScrollTop from '../components/ScrollTop'
 
 export default function ArticleNew() {
   const navigate = useNavigate()
@@ -7,6 +10,26 @@ export default function ArticleNew() {
   const [content, setContent] = useState('')
   const [memo, setMemo] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [allTags, setAllTags] = useState<Tag[]>([])
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    fetchTags()
+  }, [])
+
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags', {
+        headers: {
+          Authorization: 'Basic ' + btoa('mn:39'),
+        },
+      })
+      const data = await response.json()
+      setAllTags(data.tags || [])
+    } catch (error) {
+      console.error('Failed to fetch tags:', error)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,19 +71,47 @@ export default function ArticleNew() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-4 md:p-8">
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('/')}
-            className="text-blue-600 hover:text-blue-800 text-sm"
-          >
-            ← 一覧に戻る
-          </button>
+    <div className="flex h-screen">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar
+          selectedCategoryId={null}
+          selectedTagId={null}
+          onCategorySelect={() => {}}
+          onTagSelect={() => {}}
+          tags={allTags}
+        />
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 bg-gray-50 overflow-y-auto">
+        {/* Mobile Header */}
+        <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="text-2xl"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+            <h1 className="text-lg font-semibold">新規記事作成</h1>
+            <div className="w-8" />
+          </div>
         </div>
 
-        <div className="bg-white shadow-md rounded-lg p-6 md:p-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-6">新規記事作成</h1>
+        <div className="max-w-4xl mx-auto p-4 md:p-8">
+          <div className="hidden md:block mb-6">
+            <button
+              onClick={() => navigate('/')}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              ← 一覧に戻る
+            </button>
+          </div>
+
+          <div className="bg-white shadow-md rounded-lg p-6 md:p-8">
+            <h1 className="hidden md:block text-2xl md:text-3xl font-bold mb-6">新規記事作成</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -128,6 +179,28 @@ export default function ArticleNew() {
           </form>
         </div>
       </div>
-    </div>
+    </main>
+
+    {/* Mobile Drawer */}
+    {mobileSidebarOpen && (
+      <div className="md:hidden fixed inset-0 z-30">
+        <div
+          className="absolute inset-0 bg-black/40"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+        <div className="absolute inset-y-0 left-0 w-72 max-w-[80%]">
+          <Sidebar
+            selectedCategoryId={null}
+            selectedTagId={null}
+            onCategorySelect={() => {}}
+            onTagSelect={() => {}}
+            tags={allTags}
+          />
+        </div>
+      </div>
+    )}
+
+    <ScrollTop />
+  </div>
   )
 }

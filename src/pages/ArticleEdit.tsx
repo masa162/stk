@@ -1,3 +1,254 @@
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import type { Article, Tag } from '../lib/db/types'
+import Sidebar from '../components/Sidebar'
+import ScrollTop from '../components/ScrollTop'
+
 export default function ArticleEdit() {
-  return <div className="p-8">記事編集ページ（実装予定）</div>
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [article, setArticle] = useState<Article | null>(null)
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [memo, setMemo] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [allTags, setAllTags] = useState<Tag[]>([])
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    if (id) {
+      fetchArticle(parseInt(id))
+      fetchTags()
+    }
+  }, [id])
+
+  const fetchArticle = async (articleId: number) => {
+    try {
+      const response = await fetch(`/api/articles/${articleId}`, {
+        headers: {
+          Authorization: 'Basic ' + btoa('mn:39'),
+        },
+      })
+      const data = await response.json()
+      const article = data.article
+      setArticle(article)
+      setTitle(article.title)
+      setContent(article.content || '')
+      setMemo(article.memo || '')
+    } catch (error) {
+      console.error('Failed to fetch article:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags', {
+        headers: {
+          Authorization: 'Basic ' + btoa('mn:39'),
+        },
+      })
+      const data = await response.json()
+      setAllTags(data.tags || [])
+    } catch (error) {
+      console.error('Failed to fetch tags:', error)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!title.trim() || !content.trim()) {
+      alert('タイトルと本文は必須です')
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      const response = await fetch(`/api/articles/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa('mn:39'),
+        },
+        body: JSON.stringify({
+          title,
+          content,
+          memo: memo || undefined,
+        }),
+      })
+
+      if (response.ok) {
+        alert('記事を更新しました')
+        navigate(`/articles/${id}`)
+      } else {
+        alert('更新に失敗しました')
+      }
+    } catch (error) {
+      console.error('Failed to update article:', error)
+      alert('更新に失敗しました')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-500">読み込み中...</div>
+      </div>
+    )
+  }
+
+  if (!article) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-500">記事が見つかりません</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-screen">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar
+          selectedCategoryId={null}
+          selectedTagId={null}
+          onCategorySelect={() => {}}
+          onTagSelect={() => {}}
+          tags={allTags}
+        />
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 bg-gray-50 overflow-y-auto">
+        {/* Mobile Header */}
+        <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="text-2xl"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+            <h1 className="text-lg font-semibold">記事編集</h1>
+            <button
+              onClick={() => navigate(`/articles/${id}`)}
+              className="text-blue-600 text-sm"
+            >
+              詳細
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto p-4 md:p-8">
+          <div className="hidden md:block mb-6">
+            <button
+              onClick={() => navigate(`/articles/${id}`)}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              ← 記事詳細に戻る
+            </button>
+          </div>
+
+          <div className="bg-white shadow-md rounded-lg p-6 md:p-8">
+            <h1 className="hidden md:block text-2xl md:text-3xl font-bold mb-6">
+              記事編集: {article.title}
+            </h1>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  タイトル <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="記事のタイトルを入力"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  メモ
+                </label>
+                <input
+                  type="text"
+                  value={memo}
+                  onChange={(e) => setMemo(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="メモを入力（任意）"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  本文 (Markdown) <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  rows={20}
+                  placeholder="# 見出し
+
+本文をMarkdown形式で入力してください..."
+                  required
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Markdown記法が使用できます（見出し、リスト、コードブロックなど）
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? '更新中...' : '更新'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/articles/${id}`)}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+
+      {/* Mobile Drawer */}
+      {mobileSidebarOpen && (
+        <div className="md:hidden fixed inset-0 z-30">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[80%]">
+            <Sidebar
+              selectedCategoryId={null}
+              selectedTagId={null}
+              onCategorySelect={() => {}}
+              onTagSelect={() => {}}
+              tags={allTags}
+            />
+          </div>
+        </div>
+      )}
+
+      <ScrollTop />
+    </div>
+  )
 }
