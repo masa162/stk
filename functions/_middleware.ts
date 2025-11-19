@@ -11,8 +11,8 @@ import {
   restoreArticle,
   getAllTags,
   searchArticles,
-} from '../../src/lib/db/d1'
-import { ArticleStorage } from '../../src/lib/storage'
+} from '../src/lib/db/d1'
+import { ArticleStorage } from '../src/lib/storage'
 
 type Env = {
   DB: D1Database
@@ -21,13 +21,13 @@ type Env = {
   BASIC_AUTH_PASSWORD?: string
 }
 
-const app = new Hono<{ Bindings: Env }>()
+const app = new Hono<{ Bindings: Env }>({ strict: false })
 
 // CORS設定
-app.use('*', cors())
+app.use('/api/*', cors())
 
-// Basic認証ミドルウェア
-app.use('*', async (c, next) => {
+// Basic認証ミドルウェア（APIルートのみ）
+app.use('/api/*', async (c, next) => {
   const user = c.env.BASIC_AUTH_USER || 'admin'
   const pass = c.env.BASIC_AUTH_PASSWORD || 'password'
 
@@ -40,7 +40,7 @@ app.use('*', async (c, next) => {
 })
 
 // GET /api/articles - 記事一覧取得
-app.get('/articles', async (c) => {
+app.get('/api/articles', async (c) => {
   try {
     const articles = await getArticles(c.env.DB)
     return c.json({ articles })
@@ -69,7 +69,7 @@ app.get('/articles/:id', async (c) => {
 })
 
 // POST /api/articles - 記事作成
-app.post('/articles', async (c) => {
+app.post('/api/articles', async (c) => {
   try {
     const body = await c.req.json<{
       title: string
@@ -145,7 +145,7 @@ app.delete('/articles/:id', async (c) => {
 })
 
 // GET /api/trash - ゴミ箱の記事一覧
-app.get('/trash', async (c) => {
+app.get('/api/trash', async (c) => {
   try {
     const articles = await getTrashedArticles(c.env.DB)
     return c.json({ articles })
@@ -173,7 +173,7 @@ app.post('/trash/:id', async (c) => {
 })
 
 // GET /api/tags - タグ一覧
-app.get('/tags', async (c) => {
+app.get('/api/tags', async (c) => {
   try {
     const tags = await getAllTags(c.env.DB)
     return c.json({ tags })
@@ -184,7 +184,7 @@ app.get('/tags', async (c) => {
 })
 
 // GET /api/search - 記事検索
-app.get('/search', async (c) => {
+app.get('/api/search', async (c) => {
   try {
     const query = c.req.query('q') || ''
     const articles = await searchArticles(c.env.DB, query)
@@ -196,7 +196,7 @@ app.get('/search', async (c) => {
 })
 
 // GET /api/categories - カテゴリ一覧
-app.get('/categories', async (c) => {
+app.get('/api/categories', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(
       `SELECT id, name, parent_id, color, display_order, created_at, updated_at
@@ -212,7 +212,7 @@ app.get('/categories', async (c) => {
 })
 
 // POST /api/categories - カテゴリ作成
-app.post('/categories', async (c) => {
+app.post('/api/categories', async (c) => {
   try {
     const body = await c.req.json<{
       name: string
@@ -305,4 +305,14 @@ app.post('/categories/reorder', async (c) => {
   }
 })
 
-export const onRequest = app.fetch
+export const onRequest: PagesFunction<Env> = async (context) => {
+  const url = new URL(context.request.url)
+
+  // /api/* パスのみHonoで処理
+  if (url.pathname.startsWith('/api/')) {
+    return app.fetch(context.request, context.env, context)
+  }
+
+  // それ以外は次のミドルウェアまたは静的ファイルへ
+  return context.next()
+}
