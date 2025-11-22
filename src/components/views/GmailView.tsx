@@ -9,6 +9,7 @@ import MarkdownRenderer from '../MarkdownRenderer'
 import ViewSwitcher, { type ViewMode } from '../ViewSwitcher'
 import { useArticle } from '../../hooks/useArticle'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useToast } from '../../contexts/ToastContext'
 
 interface GmailViewProps {
   articles: ArticleMetadata[]
@@ -43,6 +44,7 @@ export default function GmailView({
 }: GmailViewProps) {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
+  const toast = useToast()
   const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null)
   const { article: selectedArticle, loading: loadingArticle } = useArticle(selectedArticleId)
 
@@ -56,7 +58,7 @@ export default function GmailView({
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    alert('コピーしました')
+    toast.success('コピーしました')
   }
 
   const handleExportMarkdown = () => {
@@ -94,15 +96,15 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
       })
 
       if (response.ok) {
-        alert('記事をゴミ箱に移動しました')
+        toast.success('記事をゴミ箱に移動しました')
         setSelectedArticleId(null)
         window.location.reload() // Refresh to update article list
       } else {
-        alert('削除に失敗しました')
+        toast.error('削除に失敗しました')
       }
     } catch (error) {
       console.error('Failed to delete article:', error)
-      alert('削除に失敗しました')
+      toast.error('削除に失敗しました')
     }
   }
 

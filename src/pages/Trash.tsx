@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import type { ArticleMetadata, Tag } from '../lib/db/types'
 import Sidebar from '../components/Sidebar'
 import ScrollTop from '../components/ScrollTop'
+import { useToast } from '../contexts/ToastContext'
 
 export default function Trash() {
   const navigate = useNavigate()
+  const toast = useToast()
   const [articles, setArticles] = useState<ArticleMetadata[]>([])
   const [allTags, setAllTags] = useState<Tag[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,14 +49,14 @@ export default function Trash() {
       })
 
       if (response.ok) {
-        alert('記事を復元しました')
+        toast.success('記事を復元しました')
         fetchTrashedArticles()
       } else {
-        alert('復元に失敗しました')
+        toast.error('復元に失敗しました')
       }
     } catch (error) {
       console.error('Failed to restore article:', error)
-      alert('復元に失敗しました')
+      toast.error('復元に失敗しました')
     }
   }
 

@@ -4,6 +4,7 @@ import type { Tag } from '../lib/db/types'
 import Sidebar from '../components/Sidebar'
 import ScrollTop from '../components/ScrollTop'
 import MobileHeader from '../components/MobileHeader'
+import { useToast } from '../contexts/ToastContext'
 
 interface Category {
   id: number
@@ -13,6 +14,7 @@ interface Category {
 
 export default function ArticleNew() {
   const navigate = useNavigate()
+  const toast = useToast()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [memo, setMemo] = useState('')
@@ -52,7 +54,7 @@ export default function ArticleNew() {
     e.preventDefault()
 
     if (!title.trim() || !content.trim()) {
-      alert('タイトルと本文は必須です')
+      toast.warning('タイトルと本文は必須です')
       return
     }
 
@@ -80,13 +82,14 @@ export default function ArticleNew() {
       })
 
       if (response.ok) {
+        toast.success('記事を作成しました')
         navigate('/')
       } else {
-        alert('作成に失敗しました')
+        toast.error('作成に失敗しました')
       }
     } catch (error) {
       console.error('Failed to create article:', error)
-      alert('作成に失敗しました')
+      toast.error('作成に失敗しました')
     } finally {
       setSubmitting(false)
     }

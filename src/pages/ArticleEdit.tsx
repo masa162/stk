@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import type { Article, Tag } from '../lib/db/types'
 import Sidebar from '../components/Sidebar'
 import ScrollTop from '../components/ScrollTop'
+import { useToast } from '../contexts/ToastContext'
 
 interface Category {
   id: number
@@ -13,6 +14,7 @@ interface Category {
 export default function ArticleEdit() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const toast = useToast()
   const [article, setArticle] = useState<Article | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -75,7 +77,7 @@ export default function ArticleEdit() {
     e.preventDefault()
 
     if (!title.trim() || !content.trim()) {
-      alert('タイトルと本文は必須です')
+      toast.warning('タイトルと本文は必須です')
       return
     }
 
@@ -103,13 +105,14 @@ export default function ArticleEdit() {
       })
 
       if (response.ok) {
+        toast.success('記事を更新しました')
         navigate(`/articles/${id}`)
       } else {
-        alert('更新に失敗しました')
+        toast.error('更新に失敗しました')
       }
     } catch (error) {
       console.error('Failed to update article:', error)
-      alert('更新に失敗しました')
+      toast.error('更新に失敗しました')
     } finally {
       setSubmitting(false)
     }

@@ -6,10 +6,12 @@ import TableOfContents from '../components/TableOfContents'
 import MarkdownRenderer from '../components/MarkdownRenderer'
 import ScrollTop from '../components/ScrollTop'
 import MobileHeader from '../components/MobileHeader'
+import { useToast } from '../contexts/ToastContext'
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const toast = useToast()
   const [article, setArticle] = useState<Article | null>(null)
   const [allTags, setAllTags] = useState<Tag[]>([])
   const [loading, setLoading] = useState(true)
@@ -81,20 +83,20 @@ tags: ${article.tags?.map((t) => t.name).join(', ') || ''}
       })
 
       if (response.ok) {
-        alert('記事をゴミ箱に移動しました')
+        toast.success('記事をゴミ箱に移動しました')
         navigate('/')
       } else {
-        alert('削除に失敗しました')
+        toast.error('削除に失敗しました')
       }
     } catch (error) {
       console.error('Failed to delete article:', error)
-      alert('削除に失敗しました')
+      toast.error('削除に失敗しました')
     }
   }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    alert('コピーしました')
+    toast.success('コピーしました')
   }
 
   if (loading) {
