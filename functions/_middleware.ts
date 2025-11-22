@@ -43,7 +43,8 @@ app.use('/api/*', cors())
 // GET /api/articles - 記事一覧取得
 app.get('/api/articles', async (c) => {
   try {
-    const articles = await getArticles(c.env.DB)
+    const storage = new ArticleStorage({ bucket: c.env.ARTICLES_BUCKET })
+    const articles = await getArticles(c.env.DB, storage)
     return c.json({ articles })
   } catch (error) {
     console.error('Error fetching articles:', error)

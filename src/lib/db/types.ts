@@ -38,6 +38,8 @@ export interface ArticleMetadata {
   deleted_at: string | null;
   tags?: Tag[];
   category?: Category;
+  thumbnail_url: string | null;  // First image URL from markdown content
+  excerpt: string | null;         // Text excerpt from content (without markdown syntax)
 }
 
 export interface Tag {

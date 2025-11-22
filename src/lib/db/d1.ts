@@ -1,5 +1,6 @@
 import { Article, ArticleMetadata, Tag } from "./types";
 import { ArticleStorage } from "../storage";
+import { extractFirstImageUrl, extractExcerpt } from "../markdown-utils";
 
 export interface Env {
   DB: D1Database;
@@ -7,10 +8,10 @@ export interface Env {
 }
 
 /**
- * Get all articles (metadata only, no content)
- * Optimized: No N+1 queries, excludes content field
+ * Get all articles with metadata, thumbnail, and excerpt
+ * Optimized: No N+1 queries, parallel R2 fetching for content
  */
-export async function getArticles(db: D1Database): Promise<ArticleMetadata[]> {
+export async function getArticles(db: D1Database, storage: ArticleStorage): Promise<ArticleMetadata[]> {
   // Fetch metadata only (exclude content column)
   const { results } = await db
     .prepare(
@@ -101,6 +102,36 @@ export async function getArticles(db: D1Database): Promise<ArticleMetadata[]> {
     article.tags = tagMap.get(article.id) || [];
     article.category = article.category_id ? categoryMap.get(article.category_id) : undefined;
   }
+
+  // Fetch content from R2 in parallel and extract thumbnail + excerpt
+  await Promise.all(
+    articles.map(async (article) => {
+      // Initialize fields
+      article.thumbnail_url = null;
+      article.excerpt = null;
+
+      // Skip if no content_key
+      if (!article.content_key) {
+        return;
+      }
+
+      try {
+        // Fetch content from R2
+        const content = await storage.getContent(article.content_key);
+
+        if (content) {
+          // Extract thumbnail URL (first image)
+          article.thumbnail_url = extractFirstImageUrl(content);
+
+          // Extract text excerpt (100 characters)
+          article.excerpt = extractExcerpt(content, 100);
+        }
+      } catch (error) {
+        // Log error but don't fail the entire request
+        console.error(`Failed to fetch content for article ${article.id}:`, error);
+      }
+    })
+  );
 
   return articles;
 }

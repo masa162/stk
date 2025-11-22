@@ -17,16 +17,44 @@ export default function ArticleCardView({ articles, onArticleClick }: ArticleCar
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-8">
       {articles.map((article) => {
+        const hasThumbnail = !!article.thumbnail_url
+
         return (
           <div
             key={article.id}
             onClick={() => onArticleClick(article)}
             className="bg-white border border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
           >
-            {/* Placeholder Image */}
-            <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-              <div className="text-4xl text-blue-300">📄</div>
-            </div>
+            {/* Thumbnail or Excerpt */}
+            {hasThumbnail ? (
+              <div className="w-full h-48 bg-gray-100">
+                <img
+                  src={article.thumbnail_url}
+                  alt={article.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // If image fails to load, hide it and show excerpt/placeholder instead
+                    e.currentTarget.parentElement!.innerHTML = `
+                      <div class="w-full h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+                        <div class="text-sm text-gray-700 text-center line-clamp-6">
+                          ${article.excerpt || '📄'}
+                        </div>
+                      </div>
+                    `
+                  }}
+                />
+              </div>
+            ) : article.excerpt ? (
+              <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+                <p className="text-sm text-gray-700 text-center line-clamp-6">
+                  {article.excerpt}
+                </p>
+              </div>
+            ) : (
+              <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                <div className="text-4xl text-blue-300">📄</div>
+              </div>
+            )}
 
             {/* Card Content */}
             <div className="p-4">
