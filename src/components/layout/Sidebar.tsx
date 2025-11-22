@@ -63,6 +63,25 @@ export default function Sidebar({
         </Link>
       </div>
 
+      {/* Admin Menu */}
+      <div className="p-4 space-y-2 border-b border-gray-700">
+        <h3 className="text-sm font-semibold mb-3 text-gray-400 uppercase">
+          管理
+        </h3>
+        <Link
+          to="/admin/tags"
+          className="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-center transition-colors text-sm"
+        >
+          タグ管理
+        </Link>
+        <Link
+          to="/admin/categories"
+          className="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-center transition-colors text-sm"
+        >
+          カテゴリ管理
+        </Link>
+      </div>
+
       {/* Category Filter */}
       <div className="p-4 border-b border-gray-700">
         <h3 className="text-sm font-semibold mb-3 text-gray-400 uppercase">

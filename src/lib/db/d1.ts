@@ -526,3 +526,51 @@ async function updateArticleTags(
       .run();
   }
 }
+
+/**
+ * Update tag name
+ */
+export async function updateTag(db: D1Database, id: number, name: string): Promise<void> {
+  await db
+    .prepare("UPDATE tags SET name = ? WHERE id = ?")
+    .bind(name, id)
+    .run();
+}
+
+/**
+ * Delete tag and its associations
+ */
+export async function deleteTag(db: D1Database, id: number): Promise<void> {
+  // Delete associations first
+  await db
+    .prepare("DELETE FROM article_tags WHERE tag_id = ?")
+    .bind(id)
+    .run();
+
+  // Delete tag
+  await db
+    .prepare("DELETE FROM tags WHERE id = ?")
+    .bind(id)
+    .run();
+}
+
+/**
+ * Bulk delete tags and their associations
+ */
+export async function bulkDeleteTags(db: D1Database, tagIds: number[]): Promise<void> {
+  if (tagIds.length === 0) return;
+
+  const placeholders = tagIds.map(() => '?').join(',');
+
+  // Delete associations first
+  await db
+    .prepare(`DELETE FROM article_tags WHERE tag_id IN (${placeholders})`)
+    .bind(...tagIds)
+    .run();
+
+  // Delete tags
+  await db
+    .prepare(`DELETE FROM tags WHERE id IN (${placeholders})`)
+    .bind(...tagIds)
+    .run();
+}

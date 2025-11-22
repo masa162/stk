@@ -10,6 +10,9 @@ import {
   getTrashedArticles,
   restoreArticle,
   getAllTags,
+  updateTag,
+  deleteTag,
+  bulkDeleteTags,
   searchArticles,
 } from '../src/lib/db/d1'
 import { ArticleStorage } from '../src/lib/storage'
@@ -191,6 +194,53 @@ app.get('/api/tags', async (c) => {
   } catch (error) {
     console.error('Error fetching tags:', error)
     return c.json({ error: 'Failed to fetch tags' }, 500)
+  }
+})
+
+// PUT /api/tags/:id - タグ名更新
+app.put('/api/tags/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'))
+    const { name } = await c.req.json()
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return c.json({ error: 'Tag name is required' }, 400)
+    }
+
+    await updateTag(c.env.DB, id, name.trim())
+    return c.json({ message: 'Tag updated successfully' })
+  } catch (error) {
+    console.error('Error updating tag:', error)
+    return c.json({ error: 'Failed to update tag' }, 500)
+  }
+})
+
+// DELETE /api/tags/:id - タグ削除
+app.delete('/api/tags/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'))
+    await deleteTag(c.env.DB, id)
+    return c.json({ message: 'Tag deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting tag:', error)
+    return c.json({ error: 'Failed to delete tag' }, 500)
+  }
+})
+
+// POST /api/tags/bulk-delete - タグ一括削除
+app.post('/api/tags/bulk-delete', async (c) => {
+  try {
+    const { tagIds } = await c.req.json()
+
+    if (!Array.isArray(tagIds) || tagIds.length === 0) {
+      return c.json({ error: 'Tag IDs array is required' }, 400)
+    }
+
+    await bulkDeleteTags(c.env.DB, tagIds)
+    return c.json({ message: `${tagIds.length} tags deleted successfully` })
+  } catch (error) {
+    console.error('Error bulk deleting tags:', error)
+    return c.json({ error: 'Failed to bulk delete tags' }, 500)
   }
 })
 
