@@ -23,11 +23,8 @@ type Env = {
 
 const app = new Hono<{ Bindings: Env }>({ strict: false })
 
-// CORS設定
-app.use('/api/*', cors())
-
-// Basic認証ミドルウェア（APIルートのみ）
-app.use('/api/*', async (c, next) => {
+// Basic認証ミドルウェア（すべてのリクエストに適用）
+app.use('*', async (c, next) => {
   const user = c.env.BASIC_AUTH_USER || 'admin'
   const pass = c.env.BASIC_AUTH_PASSWORD || 'password'
 
@@ -38,6 +35,9 @@ app.use('/api/*', async (c, next) => {
 
   return auth(c, next)
 })
+
+// CORS設定
+app.use('/api/*', cors())
 
 // GET /api/articles - 記事一覧取得
 app.get('/api/articles', async (c) => {
@@ -308,11 +308,32 @@ app.post('/api/categories/reorder', async (c) => {
 export const onRequest: PagesFunction<Env> = async (context) => {
   const url = new URL(context.request.url)
 
-  // /api/* パスのみHonoで処理
+  // すべてのリクエストをHonoで処理（認証適用のため）
   if (url.pathname.startsWith('/api/')) {
+    // APIリクエストはHonoのルートで処理
     return app.fetch(context.request, context.env, context)
   }
 
-  // それ以外は次のミドルウェアまたは静的ファイルへ
-  return context.next()
+  // 静的ファイルも認証を通してから配信
+  const user = context.env.BASIC_AUTH_USER || 'admin'
+  const pass = context.env.BASIC_AUTH_PASSWORD || 'password'
+
+  const auth = basicAuth({
+    username: user,
+    password: pass,
+  })
+
+  // 認証チェックを実行
+  const authResponse = await auth(
+    {
+      req: context.request,
+      env: context.env,
+    } as any,
+    async () => {
+      // 認証成功後、静的ファイルを配信
+      return context.next()
+    }
+  )
+
+  return authResponse
 }
