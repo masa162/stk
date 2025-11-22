@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import type { ArticleMetadata } from '../../lib/db/types'
-import MobileHeader from '../MobileHeader'
-import Pagination from '../Pagination'
-import ViewSwitcher, { type ViewMode } from '../ViewSwitcher'
+import type { ArticleMetadata } from '../../../lib/db/types'
+import MobileHeader from '../../common/MobileHeader'
+import Pagination from '../../common/Pagination'
+import ViewSwitcher, { type ViewMode } from '../../common/ViewSwitcher'
 
 interface TableViewProps {
   articles: ArticleMetadata[]

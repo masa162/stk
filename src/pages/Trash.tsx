@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ArticleMetadata, Tag } from '../lib/db/types'
-import Sidebar from '../components/Sidebar'
-import ScrollTop from '../components/ScrollTop'
+import Sidebar from '../components/layout/Sidebar'
+import ScrollTop from '../components/common/ScrollTop'
 import { useToast } from '../contexts/ToastContext'
 
 export default function Trash() {

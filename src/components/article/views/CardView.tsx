@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import type { ArticleMetadata } from '../../lib/db/types'
-import MobileHeader from '../MobileHeader'
+import type { ArticleMetadata } from '../../../lib/db/types'
+import MobileHeader from '../../common/MobileHeader'
 import ArticleCardView from '../ArticleCardView'
-import Pagination from '../Pagination'
-import ViewSwitcher, { type ViewMode } from '../ViewSwitcher'
+import Pagination from '../../common/Pagination'
+import ViewSwitcher, { type ViewMode } from '../../common/ViewSwitcher'
 
 interface CardViewProps {
   articles: ArticleMetadata[]

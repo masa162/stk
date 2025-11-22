@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react'
-import Sidebar from '../components/Sidebar'
-import ScrollTop from '../components/ScrollTop'
-import GmailView from '../components/views/GmailView'
-import TableView from '../components/views/TableView'
-import CardView from '../components/views/CardView'
+import Sidebar from '../components/layout/Sidebar'
+import ScrollTop from '../components/common/ScrollTop'
+import GmailView from '../components/article/views/GmailView'
+import TableView from '../components/article/views/TableView'
+import CardView from '../components/article/views/CardView'
 import { useArticles } from '../hooks/useArticles'
 import { useTags } from '../hooks/useTags'
-import type { ViewMode } from '../components/ViewSwitcher'
+import type { ViewMode } from '../components/common/ViewSwitcher'
 
 const ITEMS_PER_PAGE = 20
 

@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Article, ArticleMetadata } from '../../lib/db/types'
-import MobileHeader from '../MobileHeader'
+import type { Article, ArticleMetadata } from '../../../lib/db/types'
+import MobileHeader from '../../common/MobileHeader'
 import ArticleListHeader from '../ArticleListHeader'
-import Pagination from '../Pagination'
-import TableOfContents from '../TableOfContents'
+import Pagination from '../../common/Pagination'
+import TableOfContents from '../../layout/TableOfContents'
 import MarkdownRenderer from '../MarkdownRenderer'
-import ViewSwitcher, { type ViewMode } from '../ViewSwitcher'
-import { useArticle } from '../../hooks/useArticle'
-import { useIsMobile } from '../../hooks/useMediaQuery'
-import { useToast } from '../../contexts/ToastContext'
+import ViewSwitcher, { type ViewMode } from '../../common/ViewSwitcher'
+import { useArticle } from '../../../hooks/useArticle'
+import { useIsMobile } from '../../../hooks/useMediaQuery'
+import { useToast } from '../../../contexts/ToastContext'
 
 interface GmailViewProps {
   articles: ArticleMetadata[]

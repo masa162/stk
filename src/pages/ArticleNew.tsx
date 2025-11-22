@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Tag } from '../lib/db/types'
-import Sidebar from '../components/Sidebar'
-import ScrollTop from '../components/ScrollTop'
-import MobileHeader from '../components/MobileHeader'
+import Sidebar from '../components/layout/Sidebar'
+import ScrollTop from '../components/common/ScrollTop'
+import MobileHeader from '../components/common/MobileHeader'
 import { useToast } from '../contexts/ToastContext'
 
 interface Category {

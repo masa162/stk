@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { Article, Tag } from '../lib/db/types'
-import Sidebar from '../components/Sidebar'
-import TableOfContents from '../components/TableOfContents'
-import MarkdownRenderer from '../components/MarkdownRenderer'
-import ScrollTop from '../components/ScrollTop'
-import MobileHeader from '../components/MobileHeader'
+import Sidebar from '../components/layout/Sidebar'
+import TableOfContents from '../components/layout/TableOfContents'
+import MarkdownRenderer from '../components/article/MarkdownRenderer'
+import ScrollTop from '../components/common/ScrollTop'
+import MobileHeader from '../components/common/MobileHeader'
 import { useToast } from '../contexts/ToastContext'
 
 export default function ArticleDetail() {
