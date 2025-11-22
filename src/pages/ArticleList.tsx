@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar'
 import ScrollTop from '../components/common/ScrollTop'
 import GmailView from '../components/article/views/GmailView'
@@ -11,6 +12,7 @@ import type { ViewMode } from '../components/common/ViewSwitcher'
 const ITEMS_PER_PAGE = 20
 
 export default function ArticleList() {
+  const location = useLocation()
   const { data: articles = [], isLoading: loading } = useArticles()
   const { data: allTags = [] } = useTags()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
@@ -24,6 +26,16 @@ export default function ArticleList() {
   // Filters
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null)
+
+  // Handle navigation state (from Tags page)
+  useEffect(() => {
+    if (location.state?.selectedTagId) {
+      setSelectedTagId(location.state.selectedTagId)
+      setCurrentPage(1)
+      // Clear the state to avoid re-applying on subsequent renders
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
   const [searchKeyword, setSearchKeyword] = useState('')
   const [sortColumn, setSortColumn] = useState<'title' | 'created_at' | 'updated_at'>('created_at')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
