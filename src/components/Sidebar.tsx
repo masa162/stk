@@ -36,11 +36,7 @@ export default function Sidebar({
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/categories')
       const data = await response.json()
       setCategories(data.categories || [])
     } catch (error) {

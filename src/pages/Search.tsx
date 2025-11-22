@@ -18,11 +18,7 @@ export default function Search() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/tags')
       const data = await response.json()
       setAllTags(data.tags || [])
     } catch (error) {
@@ -37,11 +33,7 @@ export default function Search() {
     setSearching(true)
 
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
       const data = await response.json()
       setResults(data.articles || [])
     } catch (error) {

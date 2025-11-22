@@ -29,11 +29,7 @@ export default function ArticleNew() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/tags')
       const data = await response.json()
       setAllTags(data.tags || [])
     } catch (error) {
@@ -43,11 +39,7 @@ export default function ArticleNew() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/categories')
       const data = await response.json()
       setCategories(data.categories || [])
     } catch (error) {
@@ -76,7 +68,6 @@ export default function ArticleNew() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('mn:39'),
         },
         body: JSON.stringify({
           title,

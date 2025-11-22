@@ -35,11 +35,7 @@ export default function ArticleEdit() {
 
   const fetchArticle = async (articleId: number) => {
     try {
-      const response = await fetch(`/api/articles/${articleId}`, {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch(`/api/articles/${articleId}`)
       const data = await response.json()
       const article = data.article
       setArticle(article)
@@ -57,11 +53,7 @@ export default function ArticleEdit() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/tags')
       const data = await response.json()
       setAllTags(data.tags || [])
     } catch (error) {
@@ -71,11 +63,7 @@ export default function ArticleEdit() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/categories')
       const data = await response.json()
       setCategories(data.categories || [])
     } catch (error) {
@@ -104,7 +92,6 @@ export default function ArticleEdit() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Basic ' + btoa('mn:39'),
         },
         body: JSON.stringify({
           title,

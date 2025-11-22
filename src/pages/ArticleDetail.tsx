@@ -23,11 +23,7 @@ export default function ArticleDetail() {
 
   const fetchArticle = async (articleId: number) => {
     try {
-      const response = await fetch(`/api/articles/${articleId}`, {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch(`/api/articles/${articleId}`)
       const data = await response.json()
       setArticle(data.article)
     } catch (error) {
@@ -39,11 +35,7 @@ export default function ArticleDetail() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/tags')
       const data = await response.json()
       setAllTags(data.tags || [])
     } catch (error) {
@@ -85,9 +77,6 @@ tags: ${article.tags?.map((t) => t.name).join(', ') || ''}
     try {
       const response = await fetch(`/api/articles/${article.id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
       })
 
       if (response.ok) {

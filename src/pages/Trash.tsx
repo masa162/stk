@@ -18,11 +18,7 @@ export default function Trash() {
 
   const fetchTrashedArticles = async () => {
     try {
-      const response = await fetch('/api/trash', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/trash')
       const data = await response.json()
       setArticles(data.articles || [])
     } catch (error) {
@@ -34,11 +30,7 @@ export default function Trash() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/tags')
       const data = await response.json()
       setAllTags(data.tags || [])
     } catch (error) {
@@ -52,9 +44,6 @@ export default function Trash() {
     try {
       const response = await fetch(`/api/trash/${id}`, {
         method: 'POST',
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
       })
 
       if (response.ok) {

@@ -29,11 +29,7 @@ export default function ArticleList() {
 
   const fetchArticles = async () => {
     try {
-      const response = await fetch('/api/articles', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/articles')
       const data = await response.json()
       setArticles(data.articles || [])
     } catch (error) {
@@ -45,11 +41,7 @@ export default function ArticleList() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags', {
-        headers: {
-          Authorization: 'Basic ' + btoa('mn:39'),
-        },
-      })
+      const response = await fetch('/api/tags')
       const data = await response.json()
       setAllTags(data.tags || [])
     } catch (error) {
