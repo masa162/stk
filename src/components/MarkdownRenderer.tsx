@@ -102,11 +102,26 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
               {children}
             </ol>
           ),
-          a: ({ children, ...props }) => (
-            <a className="text-blue-600 hover:text-blue-800 underline" {...props}>
-              {children}
-            </a>
-          ),
+          a: ({ children, href, ...props }) => {
+            // Check if link is external
+            const isExternal = href && (
+              href.startsWith('http://') ||
+              href.startsWith('https://') ||
+              href.startsWith('//')
+            ) && !href.includes(window.location.hostname);
+
+            return (
+              <a
+                href={href}
+                className="text-blue-600 hover:text-blue-800 underline"
+                target={isExternal ? "_blank" : undefined}
+                rel={isExternal ? "noopener noreferrer" : undefined}
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
           p: ({ children, ...props }) => (
             <p className="my-4 leading-relaxed" {...props}>
               {children}
