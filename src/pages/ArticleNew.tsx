@@ -171,10 +171,10 @@ export default function ArticleNew() {
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={createArticleMutation.isPending}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? '作成中...' : '作成'}
+                {createArticleMutation.isPending ? '作成中...' : '作成'}
               </button>
               <button
                 type="button"

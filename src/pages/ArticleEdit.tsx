@@ -224,10 +224,10 @@ export default function ArticleEdit() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={updateArticleMutation.isPending}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? '更新中...' : '更新'}
+                  {updateArticleMutation.isPending ? '更新中...' : '更新'}
                 </button>
                 <button
                   type="button"
