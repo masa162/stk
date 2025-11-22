@@ -56,3 +56,41 @@ export function extractExcerpt(markdown: string, maxLength: number = 100): strin
 
   return text || null
 }
+
+/**
+ * Extract YouTube video ID from text
+ * Supports various YouTube URL formats:
+ * - https://www.youtube.com/watch?v={VIDEO_ID}
+ * - https://youtu.be/{VIDEO_ID}
+ * - https://m.youtube.com/watch?v={VIDEO_ID}
+ */
+export function extractYouTubeVideoId(text: string): string | null {
+  if (!text) return null
+
+  // Match YouTube URL patterns
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /(?:m\.youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+  ]
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern)
+    if (match) {
+      return match[1]
+    }
+  }
+
+  return null
+}
+
+/**
+ * Generate YouTube thumbnail URL from video ID
+ * Uses maxresdefault.jpg for best quality
+ */
+export function getYouTubeThumbnailUrl(videoId: string): string {
+  // Use maxresdefault for best quality (1280x720)
+  // Falls back to hqdefault (480x360) if maxresdefault doesn't exist
+  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+}

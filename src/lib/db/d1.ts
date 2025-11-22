@@ -1,6 +1,6 @@
 import { Article, ArticleMetadata, Tag } from "./types";
 import { ArticleStorage } from "../storage";
-import { extractFirstImageUrl, extractExcerpt } from "../markdown-utils";
+import { extractFirstImageUrl, extractExcerpt, extractYouTubeVideoId, getYouTubeThumbnailUrl } from "../markdown-utils";
 
 export interface Env {
   DB: D1Database;
@@ -120,8 +120,18 @@ export async function getArticles(db: D1Database, storage: ArticleStorage): Prom
         const content = await storage.getContent(article.content_key);
 
         if (content) {
-          // Extract thumbnail URL (first image)
+          // Extract thumbnail URL with priority:
+          // 1. Markdown image ![](url)
+          // 2. YouTube video thumbnail
           article.thumbnail_url = extractFirstImageUrl(content);
+
+          if (!article.thumbnail_url) {
+            // Try to extract YouTube video ID and generate thumbnail
+            const videoId = extractYouTubeVideoId(content);
+            if (videoId) {
+              article.thumbnail_url = getYouTubeThumbnailUrl(videoId);
+            }
+          }
 
           // Extract text excerpt (100 characters)
           article.excerpt = extractExcerpt(content, 100);
