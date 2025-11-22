@@ -19,6 +19,7 @@ type Env = {
   ARTICLES_BUCKET: R2Bucket
   BASIC_AUTH_USER?: string
   BASIC_AUTH_PASSWORD?: string
+  ASSETS: Fetcher
 }
 
 const app = new Hono<{ Bindings: Env }>({ strict: false })
@@ -305,35 +306,13 @@ app.post('/api/categories/reorder', async (c) => {
   }
 })
 
+// 静的ファイルも含めてすべてのリクエストを処理
+app.all('*', async (c) => {
+  // 静的ファイルを配信
+  return c.env.ASSETS.fetch(c.req.raw)
+})
+
 export const onRequest: PagesFunction<Env> = async (context) => {
-  const url = new URL(context.request.url)
-
-  // すべてのリクエストをHonoで処理（認証適用のため）
-  if (url.pathname.startsWith('/api/')) {
-    // APIリクエストはHonoのルートで処理
-    return app.fetch(context.request, context.env, context)
-  }
-
-  // 静的ファイルも認証を通してから配信
-  const user = context.env.BASIC_AUTH_USER || 'admin'
-  const pass = context.env.BASIC_AUTH_PASSWORD || 'password'
-
-  const auth = basicAuth({
-    username: user,
-    password: pass,
-  })
-
-  // 認証チェックを実行
-  const authResponse = await auth(
-    {
-      req: context.request,
-      env: context.env,
-    } as any,
-    async () => {
-      // 認証成功後、静的ファイルを配信
-      return context.next()
-    }
-  )
-
-  return authResponse
+  // すべてのリクエストをHonoで処理（認証が適用される）
+  return app.fetch(context.request, context.env, context)
 }
