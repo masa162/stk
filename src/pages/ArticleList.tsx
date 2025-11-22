@@ -337,7 +337,12 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
             <div className="border-b overflow-y-auto">
               <div className="p-6">
                 {/* Title */}
-                <h1 className="text-3xl font-bold mb-4">{selectedArticle.title}</h1>
+                <h1
+                  onClick={() => navigate(`/articles/${selectedArticle.id}`)}
+                  className="text-3xl font-bold mb-4 cursor-pointer hover:text-blue-600 transition-colors"
+                >
+                  {selectedArticle.title}
+                </h1>
 
                 {/* ID with copy button */}
                 <div className="flex items-center gap-2 mb-4">
