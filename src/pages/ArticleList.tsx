@@ -4,7 +4,10 @@ import type { Article, ArticleMetadata, Tag } from '../lib/db/types'
 import Sidebar from '../components/Sidebar'
 import TableOfContents from '../components/TableOfContents'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import ArticleCardView from '../components/ArticleCardView'
 import ScrollTop from '../components/ScrollTop'
+
+type ViewMode = 'gmail' | 'table' | 'card'
 
 export default function ArticleList() {
   const navigate = useNavigate()
@@ -13,7 +16,13 @@ export default function ArticleList() {
   const [loading, setLoading] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-  // Selected article for preview
+  // View mode state with localStorage persistence
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem('articleViewMode')
+    return (saved as ViewMode) || 'gmail'
+  })
+
+  // Selected article for preview (Gmail view)
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
   const [loadingArticle, setLoadingArticle] = useState(false)
 
@@ -27,6 +36,12 @@ export default function ArticleList() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 20
+
+  // Save view mode to localStorage when changed
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode)
+    localStorage.setItem('articleViewMode', mode)
+  }
 
   useEffect(() => {
     fetchArticles()
@@ -180,6 +195,45 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
     }
   }
 
+  // Render view switcher
+  const renderViewSwitcher = () => (
+    <div className="flex gap-2">
+      <button
+        onClick={() => handleViewModeChange('gmail')}
+        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+          viewMode === 'gmail'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+        title="Gmail風ビュー"
+      >
+        📧 Gmail
+      </button>
+      <button
+        onClick={() => handleViewModeChange('table')}
+        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+          viewMode === 'table'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+        title="テーブルビュー"
+      >
+        📊 テーブル
+      </button>
+      <button
+        onClick={() => handleViewModeChange('card')}
+        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+          viewMode === 'card'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+        title="カードビュー"
+      >
+        🎴 カード
+      </button>
+    </div>
+  )
+
   return (
     <div className="flex h-screen">
       {/* Desktop Sidebar */}
@@ -193,8 +247,11 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
         />
       </div>
 
-      {/* Article List Pane */}
-      <aside className="w-full md:w-96 lg:w-1/3 bg-white border-r overflow-y-auto">
+      {/* Gmail View: Two-pane layout */}
+      {viewMode === 'gmail' && (
+        <>
+          {/* Article List Pane */}
+          <aside className="w-full md:w-96 lg:w-1/3 bg-white border-r overflow-y-auto">
         {/* Mobile Header */}
         <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
           <div className="flex items-center justify-between px-4 py-3">
@@ -212,6 +269,11 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
 
         {/* List Header */}
         <div className="sticky top-0 md:top-0 z-10 bg-white border-b p-4">
+          {/* View Switcher - Desktop only */}
+          <div className="hidden md:flex mb-3">
+            {renderViewSwitcher()}
+          </div>
+
           {/* Search Field */}
           <div className="mb-3">
             <input
@@ -422,11 +484,261 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
         )}
       </main>
 
-      {/* Right TOC Sidebar - Desktop only */}
-      {selectedArticle?.content && (
-        <div className="hidden lg:block">
-          <TableOfContents content={selectedArticle.content} />
-        </div>
+          {/* Right TOC Sidebar - Desktop only */}
+          {selectedArticle?.content && (
+            <div className="hidden lg:block">
+              <TableOfContents content={selectedArticle.content} />
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Table View: Full-width table */}
+      {viewMode === 'table' && (
+        <main className="flex-1 bg-white overflow-y-auto">
+          {/* Mobile Header */}
+          <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
+            <div className="flex items-center justify-between px-4 py-3">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="text-2xl"
+                aria-label="Open menu"
+              >
+                ☰
+              </button>
+              <h1 className="text-lg font-semibold">記事一覧</h1>
+              <div className="w-8" />
+            </div>
+          </div>
+
+          {/* Header with view switcher */}
+          <div className="p-4 md:p-8 border-b">
+            {/* View Switcher */}
+            <div className="mb-4 hidden md:flex">
+              {renderViewSwitcher()}
+            </div>
+
+            {/* Search Field */}
+            <div className="mb-4">
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="タイトルやメモから検索..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="text-sm text-gray-500">
+              {filteredArticles.length}件の記事
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="p-4 md:p-8">
+            {paginatedArticles.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                記事がありません
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200">
+                  <colgroup>
+                    <col style={{ width: '42%' }} />
+                    <col style={{ width: '5%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '15%' }} />
+                    <col style={{ width: '15%' }} />
+                  </colgroup>
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th
+                        onClick={() => handleSort('title')}
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      >
+                        タイトル {sortColumn === 'title' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        メモ
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        カテゴリ
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        タグ
+                      </th>
+                      <th
+                        onClick={() => handleSort('created_at')}
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      >
+                        作成日 {sortColumn === 'created_at' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th
+                        onClick={() => handleSort('updated_at')}
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      >
+                        更新日 {sortColumn === 'updated_at' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {paginatedArticles.map((article) => (
+                      <tr
+                        key={article.id}
+                        onClick={() => navigate(`/articles/${article.id}`)}
+                        className="hover:bg-gray-50 cursor-pointer"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                            {article.title}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm text-gray-600 truncate max-w-xs">
+                            {article.memo}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {article.category && (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-800">
+                              {article.category.name}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {article.tags?.map((tag) => (
+                              <span
+                                key={tag.id}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                              >
+                                {tag.name}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">
+                            {new Date(article.created_at).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                            })}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">
+                            {new Date(article.updated_at).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  前へ
+                </button>
+                <span className="text-sm text-gray-600">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  次へ
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
+      )}
+
+      {/* Card View: Grid layout */}
+      {viewMode === 'card' && (
+        <main className="flex-1 bg-gray-50 overflow-y-auto">
+          {/* Mobile Header */}
+          <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
+            <div className="flex items-center justify-between px-4 py-3">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="text-2xl"
+                aria-label="Open menu"
+              >
+                ☰
+              </button>
+              <h1 className="text-lg font-semibold">記事一覧</h1>
+              <div className="w-8" />
+            </div>
+          </div>
+
+          {/* Header with view switcher */}
+          <div className="p-4 md:p-8 bg-white border-b">
+            {/* View Switcher */}
+            <div className="mb-4 hidden md:flex">
+              {renderViewSwitcher()}
+            </div>
+
+            {/* Search Field */}
+            <div className="mb-4">
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="タイトルやメモから検索..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="text-sm text-gray-500">
+              {filteredArticles.length}件の記事
+            </div>
+          </div>
+
+          {/* Cards */}
+          <ArticleCardView
+            articles={paginatedArticles}
+            onArticleClick={(article) => navigate(`/articles/${article.id}`)}
+          />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="sticky bottom-0 bg-white border-t p-4 flex items-center justify-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                前へ
+              </button>
+              <span className="text-sm text-gray-600">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                次へ
+              </button>
+            </div>
+          )}
+        </main>
       )}
 
       {/* Mobile Drawer */}
