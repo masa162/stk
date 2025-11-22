@@ -11,8 +11,8 @@ import type { ViewMode } from '../components/common/ViewSwitcher'
 const ITEMS_PER_PAGE = 20
 
 export default function ArticleList() {
-  const { articles, loading } = useArticles()
-  const { tags: allTags } = useTags()
+  const { data: articles = [], isLoading: loading } = useArticles()
+  const { data: allTags = [] } = useTags()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   // View mode state with localStorage persistence

@@ -1,50 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import type { Article, Tag } from '../lib/db/types'
 import Sidebar from '../components/layout/Sidebar'
 import TableOfContents from '../components/layout/TableOfContents'
 import MarkdownRenderer from '../components/article/MarkdownRenderer'
 import ScrollTop from '../components/common/ScrollTop'
 import MobileHeader from '../components/common/MobileHeader'
 import { useToast } from '../contexts/ToastContext'
+import { useArticle } from '../hooks/useArticle'
+import { useTags } from '../hooks/useTags'
+import { useDeleteArticle } from '../hooks/useArticleMutations'
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const toast = useToast()
-  const [article, setArticle] = useState<Article | null>(null)
-  const [allTags, setAllTags] = useState<Tag[]>([])
-  const [loading, setLoading] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    if (id) {
-      fetchArticle(parseInt(id))
-      fetchTags()
-    }
-  }, [id])
-
-  const fetchArticle = async (articleId: number) => {
-    try {
-      const response = await fetch(`/api/articles/${articleId}`)
-      const data = await response.json()
-      setArticle(data.article)
-    } catch (error) {
-      console.error('Failed to fetch article:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchTags = async () => {
-    try {
-      const response = await fetch('/api/tags')
-      const data = await response.json()
-      setAllTags(data.tags || [])
-    } catch (error) {
-      console.error('Failed to fetch tags:', error)
-    }
-  }
+  const articleId = id ? parseInt(id) : null
+  const { data: article, isLoading: loading } = useArticle(articleId)
+  const { data: allTags = [] } = useTags()
+  const deleteArticleMutation = useDeleteArticle()
 
   const handleExportMarkdown = () => {
     if (!article) return
@@ -77,21 +52,16 @@ tags: ${article.tags?.map((t) => t.name).join(', ') || ''}
     if (!article) return
     if (!confirm('この記事をゴミ箱に移動しますか？')) return
 
-    try {
-      const response = await fetch(`/api/articles/${article.id}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
+    deleteArticleMutation.mutate(article.id, {
+      onSuccess: () => {
         toast.success('記事をゴミ箱に移動しました')
         navigate('/')
-      } else {
+      },
+      onError: (error) => {
+        console.error('Failed to delete article:', error)
         toast.error('削除に失敗しました')
-      }
-    } catch (error) {
-      console.error('Failed to delete article:', error)
-      toast.error('削除に失敗しました')
-    }
+      },
+    })
   }
 
   const copyToClipboard = (text: string) => {

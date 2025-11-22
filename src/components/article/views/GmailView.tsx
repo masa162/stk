@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Article, ArticleMetadata } from '../../../lib/db/types'
+import type { ArticleMetadata } from '../../../lib/db/types'
 import MobileHeader from '../../common/MobileHeader'
 import ArticleListHeader from '../ArticleListHeader'
 import Pagination from '../../common/Pagination'
@@ -8,6 +8,7 @@ import TableOfContents from '../../layout/TableOfContents'
 import MarkdownRenderer from '../MarkdownRenderer'
 import ViewSwitcher, { type ViewMode } from '../../common/ViewSwitcher'
 import { useArticle } from '../../../hooks/useArticle'
+import { useDeleteArticle } from '../../../hooks/useArticleMutations'
 import { useIsMobile } from '../../../hooks/useMediaQuery'
 import { useToast } from '../../../contexts/ToastContext'
 
@@ -46,7 +47,8 @@ export default function GmailView({
   const isMobile = useIsMobile()
   const toast = useToast()
   const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null)
-  const { article: selectedArticle, loading: loadingArticle } = useArticle(selectedArticleId)
+  const { data: selectedArticle, isLoading: loadingArticle } = useArticle(selectedArticleId)
+  const deleteArticleMutation = useDeleteArticle()
 
   const handleArticleClick = (article: ArticleMetadata) => {
     if (isMobile) {
@@ -90,22 +92,16 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
     if (!selectedArticle) return
     if (!confirm('この記事をゴミ箱に移動しますか?')) return
 
-    try {
-      const response = await fetch(`/api/articles/${selectedArticle.id}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
+    deleteArticleMutation.mutate(selectedArticle.id, {
+      onSuccess: () => {
         toast.success('記事をゴミ箱に移動しました')
         setSelectedArticleId(null)
-        window.location.reload() // Refresh to update article list
-      } else {
+      },
+      onError: (error) => {
+        console.error('Failed to delete article:', error)
         toast.error('削除に失敗しました')
-      }
-    } catch (error) {
-      console.error('Failed to delete article:', error)
-      toast.error('削除に失敗しました')
-    }
+      },
+    })
   }
 
   return (

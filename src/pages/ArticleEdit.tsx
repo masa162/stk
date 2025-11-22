@@ -1,77 +1,40 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import type { Article, Tag } from '../lib/db/types'
+import type { Tag } from '../lib/db/types'
 import Sidebar from '../components/layout/Sidebar'
 import ScrollTop from '../components/common/ScrollTop'
 import { useToast } from '../contexts/ToastContext'
-
-interface Category {
-  id: number
-  name: string
-  color: string
-}
+import { useArticle } from '../hooks/useArticle'
+import { useTags } from '../hooks/useTags'
+import { useCategories } from '../hooks/useCategories'
+import { useUpdateArticle } from '../hooks/useArticleMutations'
 
 export default function ArticleEdit() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const toast = useToast()
-  const [article, setArticle] = useState<Article | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [memo, setMemo] = useState('')
   const [categoryId, setCategoryId] = useState<number | null>(null)
   const [tags, setTags] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [allTags, setAllTags] = useState<Tag[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    if (id) {
-      fetchArticle(parseInt(id))
-      fetchTags()
-      fetchCategories()
-    }
-  }, [id])
+  const articleId = id ? parseInt(id) : null
+  const { data: article, isLoading: loading } = useArticle(articleId)
+  const { data: allTags = [] } = useTags()
+  const { data: categories = [] } = useCategories()
+  const updateArticleMutation = useUpdateArticle()
 
-  const fetchArticle = async (articleId: number) => {
-    try {
-      const response = await fetch(`/api/articles/${articleId}`)
-      const data = await response.json()
-      const article = data.article
-      setArticle(article)
+  useEffect(() => {
+    if (article) {
       setTitle(article.title)
       setContent(article.content || '')
       setMemo(article.memo || '')
       setCategoryId(article.category_id)
       setTags(article.tags?.map((t: Tag) => t.name).join(', ') || '')
-    } catch (error) {
-      console.error('Failed to fetch article:', error)
-    } finally {
-      setLoading(false)
     }
-  }
-
-  const fetchTags = async () => {
-    try {
-      const response = await fetch('/api/tags')
-      const data = await response.json()
-      setAllTags(data.tags || [])
-    } catch (error) {
-      console.error('Failed to fetch tags:', error)
-    }
-  }
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories')
-      const data = await response.json()
-      setCategories(data.categories || [])
-    } catch (error) {
-      console.error('Failed to fetch categories:', error)
-    }
-  }
+  }, [article])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,7 +44,7 @@ export default function ArticleEdit() {
       return
     }
 
-    setSubmitting(true)
+    if (!articleId) return
 
     // Parse tags
     const tagArray = tags
@@ -89,33 +52,26 @@ export default function ArticleEdit() {
       .map((t) => t.trim())
       .filter((t) => t.length > 0)
 
-    try {
-      const response = await fetch(`/api/articles/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+    updateArticleMutation.mutate(
+      {
+        id: articleId,
+        title,
+        content,
+        memo: memo || undefined,
+        category_id: categoryId || undefined,
+        tags: tagArray.length > 0 ? tagArray : undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success('記事を更新しました')
+          navigate(`/articles/${id}`)
         },
-        body: JSON.stringify({
-          title,
-          content,
-          memo: memo || undefined,
-          category_id: categoryId,
-          tags: tagArray.length > 0 ? tagArray : undefined,
-        }),
-      })
-
-      if (response.ok) {
-        toast.success('記事を更新しました')
-        navigate(`/articles/${id}`)
-      } else {
-        toast.error('更新に失敗しました')
+        onError: (error) => {
+          console.error('Failed to update article:', error)
+          toast.error('更新に失敗しました')
+        },
       }
-    } catch (error) {
-      console.error('Failed to update article:', error)
-      toast.error('更新に失敗しました')
-    } finally {
-      setSubmitting(false)
-    }
+    )
   }
 
   if (loading) {

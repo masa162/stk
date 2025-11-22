@@ -1,30 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ArticleMetadata, Tag } from '../lib/db/types'
+import type { ArticleMetadata } from '../lib/db/types'
 import Sidebar from '../components/layout/Sidebar'
 import ScrollTop from '../components/common/ScrollTop'
+import { useTags } from '../hooks/useTags'
 
 export default function Search() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ArticleMetadata[]>([])
   const [searching, setSearching] = useState(false)
-  const [allTags, setAllTags] = useState<Tag[]>([])
+  const { data: allTags = [] } = useTags()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-
-  useEffect(() => {
-    fetchTags()
-  }, [])
-
-  const fetchTags = async () => {
-    try {
-      const response = await fetch('/api/tags')
-      const data = await response.json()
-      setAllTags(data.tags || [])
-    } catch (error) {
-      console.error('Failed to fetch tags:', error)
-    }
-  }
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()

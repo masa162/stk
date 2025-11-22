@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ArticleMetadata, Tag } from '../lib/db/types'
+import type { ArticleMetadata } from '../lib/db/types'
 import Sidebar from '../components/layout/Sidebar'
 import ScrollTop from '../components/common/ScrollTop'
 import { useToast } from '../contexts/ToastContext'
+import { useTags } from '../hooks/useTags'
 
 export default function Trash() {
   const navigate = useNavigate()
   const toast = useToast()
   const [articles, setArticles] = useState<ArticleMetadata[]>([])
-  const [allTags, setAllTags] = useState<Tag[]>([])
+  const { data: allTags = [] } = useTags()
   const [loading, setLoading] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   useEffect(() => {
     fetchTrashedArticles()
-    fetchTags()
   }, [])
 
   const fetchTrashedArticles = async () => {
@@ -27,16 +27,6 @@ export default function Trash() {
       console.error('Failed to fetch trashed articles:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchTags = async () => {
-    try {
-      const response = await fetch('/api/tags')
-      const data = await response.json()
-      setAllTags(data.tags || [])
-    } catch (error) {
-      console.error('Failed to fetch tags:', error)
     }
   }
 

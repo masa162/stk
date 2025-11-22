@@ -1,12 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-
-interface Category {
-  id: number
-  name: string
-  color: string
-  display_order: number
-}
+import { useCategories } from '../../hooks/useCategories'
 
 interface Tag {
   id: number
@@ -28,21 +21,7 @@ export default function Sidebar({
   onTagSelect,
   tags,
 }: SidebarProps) {
-  const [categories, setCategories] = useState<Category[]>([])
-
-  useEffect(() => {
-    fetchCategories()
-  }, [])
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories')
-      const data = await response.json()
-      setCategories(data.categories || [])
-    } catch (error) {
-      console.error('Failed to fetch categories:', error)
-    }
-  }
+  const { data: categories = [] } = useCategories()
 
   return (
     <div className="w-64 bg-gray-900 text-white h-screen flex flex-col overflow-y-auto">

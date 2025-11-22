@@ -1,16 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Tag } from '../lib/db/types'
 import Sidebar from '../components/layout/Sidebar'
 import ScrollTop from '../components/common/ScrollTop'
 import MobileHeader from '../components/common/MobileHeader'
 import { useToast } from '../contexts/ToastContext'
-
-interface Category {
-  id: number
-  name: string
-  color: string
-}
+import { useTags } from '../hooks/useTags'
+import { useCategories } from '../hooks/useCategories'
+import { useCreateArticle } from '../hooks/useArticleMutations'
 
 export default function ArticleNew() {
   const navigate = useNavigate()
@@ -20,35 +16,11 @@ export default function ArticleNew() {
   const [memo, setMemo] = useState('')
   const [categoryId, setCategoryId] = useState<number | null>(null)
   const [tags, setTags] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [allTags, setAllTags] = useState<Tag[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    fetchTags()
-    fetchCategories()
-  }, [])
-
-  const fetchTags = async () => {
-    try {
-      const response = await fetch('/api/tags')
-      const data = await response.json()
-      setAllTags(data.tags || [])
-    } catch (error) {
-      console.error('Failed to fetch tags:', error)
-    }
-  }
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories')
-      const data = await response.json()
-      setCategories(data.categories || [])
-    } catch (error) {
-      console.error('Failed to fetch categories:', error)
-    }
-  }
+  const { data: allTags = [] } = useTags()
+  const { data: categories = [] } = useCategories()
+  const createArticleMutation = useCreateArticle()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,41 +30,31 @@ export default function ArticleNew() {
       return
     }
 
-    setSubmitting(true)
-
     // Parse tags
     const tagArray = tags
       .split(',')
       .map((t) => t.trim())
       .filter((t) => t.length > 0)
 
-    try {
-      const response = await fetch('/api/articles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    createArticleMutation.mutate(
+      {
+        title,
+        content,
+        memo: memo || undefined,
+        category_id: categoryId || undefined,
+        tags: tagArray.length > 0 ? tagArray : undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success('記事を作成しました')
+          navigate('/')
         },
-        body: JSON.stringify({
-          title,
-          content,
-          memo: memo || undefined,
-          category_id: categoryId,
-          tags: tagArray.length > 0 ? tagArray : undefined,
-        }),
-      })
-
-      if (response.ok) {
-        toast.success('記事を作成しました')
-        navigate('/')
-      } else {
-        toast.error('作成に失敗しました')
+        onError: (error) => {
+          console.error('Failed to create article:', error)
+          toast.error('作成に失敗しました')
+        },
       }
-    } catch (error) {
-      console.error('Failed to create article:', error)
-      toast.error('作成に失敗しました')
-    } finally {
-      setSubmitting(false)
-    }
+    )
   }
 
   return (
