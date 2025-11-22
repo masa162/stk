@@ -1,10 +1,17 @@
 import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import 'highlight.js/styles/github-dark.css'
 
 interface MarkdownRendererProps {
   content: string
+}
+
+interface CodeProps {
+  inline?: boolean
+  className?: string
+  children?: React.ReactNode
 }
 
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
@@ -50,7 +57,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
               {children}
             </h4>
           ),
-          code: ({ inline, className, children, ...props }: any) =>
+          code: ({ inline, className, children, ...props }: CodeProps) =>
             inline ? (
               <code className="bg-gray-100 text-red-600 px-1 py-0.5 rounded text-sm font-mono" {...props}>
                 {children}

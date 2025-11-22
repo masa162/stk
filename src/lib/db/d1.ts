@@ -7,6 +7,20 @@ export interface Env {
   ARTICLES_BUCKET: R2Bucket;
 }
 
+interface ArticleTagRow {
+  article_id: number;
+  id: number;
+  name: string;
+  created_at: string;
+}
+
+interface CategoryRow {
+  id: number;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
 /**
  * Get all articles with metadata, thumbnail, and excerpt
  * Optimized: No N+1 queries, parallel R2 fetching for content
@@ -54,7 +68,7 @@ export async function getArticles(db: D1Database, storage: ArticleStorage): Prom
       .all();
 
     // Map tags to articles
-    for (const row of tagResults as any[]) {
+    for (const row of tagResults as ArticleTagRow[]) {
       if (!tagMap.has(row.article_id)) {
         tagMap.set(row.article_id, []);
       }
@@ -86,7 +100,7 @@ export async function getArticles(db: D1Database, storage: ArticleStorage): Prom
         .bind(...batch)
         .all();
 
-      for (const row of categoryResults as any[]) {
+      for (const row of categoryResults as CategoryRow[]) {
         categoryMap.set(row.id, {
           id: row.id,
           name: row.name,

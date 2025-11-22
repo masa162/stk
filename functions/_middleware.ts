@@ -22,12 +22,21 @@ type Env = {
   ASSETS: Fetcher
 }
 
+interface MaxOrderResult {
+  max_order: number | null
+}
+
 const app = new Hono<{ Bindings: Env }>({ strict: false })
 
 // Basic認証ミドルウェア（すべてのリクエストに適用）
 app.use('*', async (c, next) => {
-  const user = c.env.BASIC_AUTH_USER || 'admin'
-  const pass = c.env.BASIC_AUTH_PASSWORD || 'password'
+  const user = c.env.BASIC_AUTH_USER
+  const pass = c.env.BASIC_AUTH_PASSWORD
+
+  if (!user || !pass) {
+    console.error('BASIC_AUTH_USER and BASIC_AUTH_PASSWORD environment variables must be set')
+    return c.text('Server configuration error', 500)
+  }
 
   const auth = basicAuth({
     username: user,
@@ -232,7 +241,7 @@ app.post('/api/categories', async (c) => {
       'SELECT MAX(display_order) as max_order FROM categories'
     ).all()
 
-    const maxOrder = (orderResults[0] as any)?.max_order || 0
+    const maxOrder = (orderResults[0] as MaxOrderResult)?.max_order ?? 0
 
     const result = await c.env.DB.prepare(
       `INSERT INTO categories (name, parent_id, color, display_order)

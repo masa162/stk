@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Tag } from '../lib/db/types'
 import Sidebar from '../components/Sidebar'
 import ScrollTop from '../components/ScrollTop'
+import MobileHeader from '../components/MobileHeader'
 
 interface Category {
   id: number
@@ -106,20 +107,7 @@ export default function ArticleNew() {
 
       {/* Main Content */}
       <main className="flex-1 bg-gray-50 overflow-y-auto">
-        {/* Mobile Header */}
-        <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button
-              onClick={() => setMobileSidebarOpen(true)}
-              className="text-2xl"
-              aria-label="Open menu"
-            >
-              ☰
-            </button>
-            <h1 className="text-lg font-semibold">新規記事作成</h1>
-            <div className="w-8" />
-          </div>
-        </div>
+        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} title="新規記事作成" />
 
         <div className="max-w-4xl mx-auto p-4 md:p-8">
           <div className="hidden md:block mb-6">

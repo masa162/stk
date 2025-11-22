@@ -6,11 +6,15 @@ import TableOfContents from '../components/TableOfContents'
 import MarkdownRenderer from '../components/MarkdownRenderer'
 import ArticleCardView from '../components/ArticleCardView'
 import ScrollTop from '../components/ScrollTop'
+import MobileHeader from '../components/MobileHeader'
+import Pagination from '../components/Pagination'
+import { useIsMobile } from '../hooks/useMediaQuery'
 
 type ViewMode = 'gmail' | 'table' | 'card'
 
 export default function ArticleList() {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [articles, setArticles] = useState<ArticleMetadata[]>([])
   const [allTags, setAllTags] = useState<Tag[]>([])
   const [loading, setLoading] = useState(true)
@@ -85,7 +89,7 @@ export default function ArticleList() {
 
   const handleArticleClick = (article: ArticleMetadata) => {
     // On mobile, navigate to article detail page
-    if (window.innerWidth < 768) {
+    if (isMobile) {
       navigate(`/articles/${article.id}`)
     } else {
       // On desktop, show preview in right pane
@@ -252,20 +256,7 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
         <>
           {/* Article List Pane */}
           <aside className="w-full md:w-96 lg:w-1/3 bg-white border-r overflow-y-auto">
-        {/* Mobile Header */}
-        <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button
-              onClick={() => setMobileSidebarOpen(true)}
-              className="text-2xl"
-              aria-label="Open menu"
-            >
-              ☰
-            </button>
-            <h1 className="text-lg font-semibold">記事一覧</h1>
-            <div className="w-8" />
-          </div>
-        </div>
+        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} title="記事一覧" />
 
         {/* List Header */}
         <div className="sticky top-0 md:top-0 z-10 bg-white border-b p-4">
@@ -363,28 +354,12 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
           )}
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="sticky bottom-0 bg-white border-t p-3 flex items-center justify-center gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              前へ
-            </button>
-            <span className="text-sm text-gray-600">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              次へ
-            </button>
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          className="sticky bottom-0 bg-white border-t p-3"
+        />
       </aside>
 
       {/* Article Preview Pane */}
@@ -496,20 +471,7 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
       {/* Table View: Full-width table */}
       {viewMode === 'table' && (
         <main className="flex-1 bg-white overflow-y-auto">
-          {/* Mobile Header */}
-          <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
-            <div className="flex items-center justify-between px-4 py-3">
-              <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className="text-2xl"
-                aria-label="Open menu"
-              >
-                ☰
-              </button>
-              <h1 className="text-lg font-semibold">記事一覧</h1>
-              <div className="w-8" />
-            </div>
-          </div>
+          <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} title="記事一覧" />
 
           {/* Header with view switcher */}
           <div className="p-4 md:p-8 border-b">
@@ -643,28 +605,12 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
               </div>
             )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  前へ
-                </button>
-                <span className="text-sm text-gray-600">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  次へ
-                </button>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              className="mt-6"
+            />
           </div>
         </main>
       )}
@@ -672,20 +618,7 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
       {/* Card View: Grid layout */}
       {viewMode === 'card' && (
         <main className="flex-1 bg-gray-50 overflow-y-auto">
-          {/* Mobile Header */}
-          <div className="md:hidden sticky top-0 z-20 bg-white border-b shadow-sm">
-            <div className="flex items-center justify-between px-4 py-3">
-              <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className="text-2xl"
-                aria-label="Open menu"
-              >
-                ☰
-              </button>
-              <h1 className="text-lg font-semibold">記事一覧</h1>
-              <div className="w-8" />
-            </div>
-          </div>
+          <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} title="記事一覧" />
 
           {/* Header with view switcher */}
           <div className="p-4 md:p-8 bg-white border-b">
@@ -716,28 +649,12 @@ tags: ${selectedArticle.tags?.map((t) => t.name).join(', ') || ''}
             onArticleClick={(article) => navigate(`/articles/${article.id}`)}
           />
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="sticky bottom-0 bg-white border-t p-4 flex items-center justify-center gap-2">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                前へ
-              </button>
-              <span className="text-sm text-gray-600">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                次へ
-              </button>
-            </div>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            className="sticky bottom-0 bg-white border-t p-4"
+          />
         </main>
       )}
 

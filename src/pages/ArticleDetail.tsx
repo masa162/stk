@@ -5,6 +5,7 @@ import Sidebar from '../components/Sidebar'
 import TableOfContents from '../components/TableOfContents'
 import MarkdownRenderer from '../components/MarkdownRenderer'
 import ScrollTop from '../components/ScrollTop'
+import MobileHeader from '../components/MobileHeader'
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>()
