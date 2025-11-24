@@ -2,6 +2,8 @@ import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
+import rehypeRaw from 'rehype-raw'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import 'highlight.js/styles/github-dark.css'
 
 interface MarkdownRendererProps {
@@ -15,11 +17,23 @@ interface CodeProps {
 }
 
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
+  // Configure sanitize schema to allow audio and video elements
+  const sanitizeSchema = {
+    ...defaultSchema,
+    tagNames: [...(defaultSchema.tagNames || []), 'audio', 'video', 'source'],
+    attributes: {
+      ...defaultSchema.attributes,
+      audio: ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload'],
+      video: ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload', 'width', 'height', 'poster'],
+      source: ['src', 'type'],
+    },
+  }
+
   return (
     <div className="prose prose-lg max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        rehypePlugins={[rehypeHighlight, rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
         components={{
           h1: ({ children, ...props }) => (
             <h1
