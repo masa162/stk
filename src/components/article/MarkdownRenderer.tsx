@@ -25,7 +25,7 @@ function processShortcodes(content: string): string {
   return content.replace(
     /\{\{<\s*youtube\s+([a-zA-Z0-9_-]+)\s*>\}\}/g,
     (_, videoId) => `
-<div class="aspect-video w-full my-6">
+<div class="aspect-video w-full max-w-4xl mx-auto my-6">
   <iframe
     width="100%"
     height="100%"
