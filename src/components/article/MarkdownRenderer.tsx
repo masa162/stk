@@ -16,16 +16,44 @@ interface CodeProps {
   children?: React.ReactNode
 }
 
+/**
+ * Process Hugo-style shortcodes in markdown content
+ * Currently supports: {{< youtube VIDEO_ID >}}
+ */
+function processShortcodes(content: string): string {
+  // Replace {{< youtube VIDEO_ID >}} with YouTube iframe
+  return content.replace(
+    /\{\{<\s*youtube\s+([a-zA-Z0-9_-]+)\s*>\}\}/g,
+    (_, videoId) => `
+<div class="aspect-video w-full my-6">
+  <iframe
+    width="100%"
+    height="100%"
+    src="https://www.youtube-nocookie.com/embed/${videoId}"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+    class="rounded-lg"
+  ></iframe>
+</div>
+    `.trim()
+  )
+}
+
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
-  // Configure sanitize schema to allow audio and video elements
+  // Process shortcodes before rendering
+  const processedContent = processShortcodes(content)
+  // Configure sanitize schema to allow audio, video, and iframe elements
   const sanitizeSchema = {
     ...defaultSchema,
-    tagNames: [...(defaultSchema.tagNames || []), 'audio', 'video', 'source'],
+    tagNames: [...(defaultSchema.tagNames || []), 'audio', 'video', 'source', 'iframe'],
     attributes: {
       ...defaultSchema.attributes,
       audio: ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload'],
       video: ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload', 'width', 'height', 'poster'],
       source: ['src', 'type'],
+      iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class'],
+      div: [...(defaultSchema.attributes?.div || []), 'class'],
     },
   }
 
@@ -150,7 +178,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
           ),
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   )
