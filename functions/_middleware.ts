@@ -20,6 +20,7 @@ import { ArticleStorage } from '../src/lib/storage'
 type Env = {
   DB: D1Database
   ARTICLES_BUCKET: R2Bucket
+  ARTICLE_CACHE: KVNamespace
   BASIC_AUTH_USER?: string
   BASIC_AUTH_PASSWORD?: string
   ASSETS: Fetcher
@@ -56,7 +57,7 @@ app.use('/api/*', cors())
 app.get('/api/articles', async (c) => {
   try {
     const storage = new ArticleStorage({ bucket: c.env.ARTICLES_BUCKET })
-    const articles = await getArticles(c.env.DB, storage)
+    const articles = await getArticles(c.env.DB, storage, c.env.ARTICLE_CACHE)
     return c.json({ articles })
   } catch (error) {
     console.error('Error fetching articles:', error)
@@ -108,6 +109,9 @@ app.post('/api/articles', async (c) => {
       category_id,
     })
 
+    // Invalidate KV cache for new article
+    await c.env.ARTICLE_CACHE.delete(`article:${articleId}:meta`)
+
     return c.json({ id: articleId }, 201)
   } catch (error) {
     console.error('Error creating article:', error)
@@ -133,6 +137,9 @@ app.put('/api/articles/:id', async (c) => {
     if (!article) {
       return c.json({ error: 'Article not found' }, 404)
     }
+
+    // Invalidate KV cache for updated article
+    await c.env.ARTICLE_CACHE.delete(`article:${id}:meta`)
 
     return c.json({ article })
   } catch (error) {

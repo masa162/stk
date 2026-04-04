@@ -10,3 +10,7 @@ database_id = "89ed51c8-0869-4192-af68-48fa1c601cc3"
 [[r2_buckets]]
 binding = "ARTICLES_BUCKET"
 bucket_name = "stuck-articles"
+
+[[kv_namespaces]]
+binding = "ARTICLE_CACHE"
+id = "912ae08648b94c1398d88e13e0efce89"

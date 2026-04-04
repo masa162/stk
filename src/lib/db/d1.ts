@@ -5,7 +5,16 @@ import { extractFirstImageUrl, extractExcerpt, extractYouTubeVideoId, getYouTube
 export interface Env {
   DB: D1Database;
   ARTICLES_BUCKET: R2Bucket;
+  ARTICLE_CACHE: KVNamespace;
 }
+
+interface ArticleMetaCache {
+  thumbnail_url: string | null;
+  excerpt: string | null;
+}
+
+// KV cache TTL: 7 days (in seconds)
+const KV_TTL = 60 * 60 * 24 * 7;
 
 interface ArticleTagRow {
   article_id: number;
@@ -23,9 +32,9 @@ interface CategoryRow {
 
 /**
  * Get all articles with metadata, thumbnail, and excerpt
- * Optimized: No N+1 queries, parallel R2 fetching for content
+ * Optimized: KV cache for thumbnail/excerpt, batch DB queries
  */
-export async function getArticles(db: D1Database, storage: ArticleStorage): Promise<ArticleMetadata[]> {
+export async function getArticles(db: D1Database, storage: ArticleStorage, kv?: KVNamespace): Promise<ArticleMetadata[]> {
   // Fetch metadata only (exclude content column)
   const { results } = await db
     .prepare(
@@ -117,41 +126,56 @@ export async function getArticles(db: D1Database, storage: ArticleStorage): Prom
     article.category = article.category_id ? categoryMap.get(article.category_id) : undefined;
   }
 
-  // Fetch content from R2 in parallel and extract thumbnail + excerpt
+  // Fetch thumbnail + excerpt: KV cache first, R2 as fallback
   await Promise.all(
     articles.map(async (article) => {
-      // Initialize fields
       article.thumbnail_url = null;
       article.excerpt = null;
 
-      // Skip if no content_key
-      if (!article.content_key) {
-        return;
+      if (!article.content_key) return;
+
+      const cacheKey = `article:${article.id}:meta`;
+
+      // Check KV cache first
+      if (kv) {
+        try {
+          const cached = await kv.get(cacheKey, 'json') as ArticleMetaCache | null;
+          if (cached !== null) {
+            article.thumbnail_url = cached.thumbnail_url;
+            article.excerpt = cached.excerpt;
+            return;
+          }
+        } catch (e) {
+          // KV miss or error, fall through to R2
+        }
       }
 
+      // Cache miss: fetch from R2
       try {
-        // Fetch content from R2
         const content = await storage.getContent(article.content_key);
 
         if (content) {
-          // Extract thumbnail URL with priority:
-          // 1. Markdown image ![](url)
-          // 2. YouTube video thumbnail
           article.thumbnail_url = extractFirstImageUrl(content);
 
           if (!article.thumbnail_url) {
-            // Try to extract YouTube video ID and generate thumbnail
             const videoId = extractYouTubeVideoId(content);
             if (videoId) {
               article.thumbnail_url = getYouTubeThumbnailUrl(videoId);
             }
           }
 
-          // Extract text excerpt (100 characters)
           article.excerpt = extractExcerpt(content, 100);
+
+          // Store in KV for future requests
+          if (kv) {
+            const toCache: ArticleMetaCache = {
+              thumbnail_url: article.thumbnail_url,
+              excerpt: article.excerpt,
+            };
+            kv.put(cacheKey, JSON.stringify(toCache), { expirationTtl: KV_TTL }).catch(() => {});
+          }
         }
       } catch (error) {
-        // Log error but don't fail the entire request
         console.error(`Failed to fetch content for article ${article.id}:`, error);
       }
     })
