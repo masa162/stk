@@ -70,7 +70,7 @@ https://stk-2r9.pages.dev/list
 欲を言えば、notionとかのように、表示はカード表示があると、視覚的に探したいときに助かる。
 
 各MD記事は、
-![](https://img.be2nd.com/na7n106b)
+![](https://img.masa86.com/na7n106b)
 
 などのように、外部の画像CDNのURLがあります、
 
@@ -147,7 +147,7 @@ github　pushしました。
 内容的にはしたのような感じなのですが、
 画像がカード表示で取得できていません。
 ”
-![](https://img.be2nd.com/na7n106b)
+![](https://img.masa86.com/na7n106b)
 タイトル未定のパキラっしゅ★
 「タイトル未定」顔面ジェスチャーゲームにチャレンジ！
 HBC
