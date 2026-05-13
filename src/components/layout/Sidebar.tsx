@@ -38,8 +38,14 @@ export default function Sidebar({
       {/* Navigation Buttons */}
       <div className="p-4 space-y-2 border-b border-gray-700">
         <Link
-          to="/articles/new"
+          to="/quick"
           className="block w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-center font-medium transition-colors"
+        >
+          Quick
+        </Link>
+        <Link
+          to="/articles/new"
+          className="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-center transition-colors text-sm"
         >
           新規記事作成
         </Link>

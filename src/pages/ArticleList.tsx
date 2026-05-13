@@ -7,6 +7,7 @@ import TableView from '../components/article/views/TableView'
 import CardView from '../components/article/views/CardView'
 import { useArticles } from '../hooks/useArticles'
 import { useTags } from '../hooks/useTags'
+import { useDragDrop } from '../hooks/useDragDrop'
 import type { ViewMode } from '../components/common/ViewSwitcher'
 
 const ITEMS_PER_PAGE = 20
@@ -16,6 +17,7 @@ export default function ArticleList() {
   const { data: articles = [], isLoading: loading } = useArticles()
   const { data: allTags = [] } = useTags()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const { isDragging, dropMessage, handleDragEnter, handleDragOver, handleDragLeave, handleDrop } = useDragDrop()
 
   // View mode state with localStorage persistence
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -123,7 +125,25 @@ export default function ArticleList() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div
+      className="flex h-screen relative"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-blue-900/80 flex items-center justify-center pointer-events-none">
+          <div className="text-white text-2xl font-medium border-2 border-dashed border-blue-400 rounded-2xl px-16 py-12">
+            .md / .txt をドロップして追加
+          </div>
+        </div>
+      )}
+      {dropMessage && (
+        <div className="absolute top-4 right-4 z-50 bg-green-600 text-white px-4 py-2 rounded shadow text-sm">
+          {dropMessage}
+        </div>
+      )}
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar
@@ -195,3 +215,4 @@ export default function ArticleList() {
     </div>
   )
 }
+

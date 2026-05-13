@@ -9,6 +9,7 @@ import Search from './pages/Search'
 import Tags from './pages/Tags'
 import AdminCategories from './pages/AdminCategories'
 import AdminTags from './pages/AdminTags'
+import Quick from './pages/Quick'
 import { ToastProvider } from './contexts/ToastContext'
 
 const queryClient = new QueryClient({
@@ -37,6 +38,7 @@ function App() {
             <Route path="/tags" element={<Tags />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/tags" element={<AdminTags />} />
+            <Route path="/quick" element={<Quick />} />
           </Routes>
         </BrowserRouter>
       </ToastProvider>

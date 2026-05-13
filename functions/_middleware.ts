@@ -14,6 +14,7 @@ import {
   deleteTag,
   bulkDeleteTags,
   searchArticles,
+  rebuildFts,
 } from '../src/lib/db/d1'
 import { ArticleStorage } from '../src/lib/storage'
 
@@ -96,8 +97,8 @@ app.post('/api/articles', async (c) => {
 
     const { title, content, memo, tags, category_id } = body
 
-    if (!title || !content) {
-      return c.json({ error: 'Title and content are required' }, 400)
+    if (!title) {
+      return c.json({ error: 'Title is required' }, 400)
     }
 
     const storage = new ArticleStorage({ bucket: c.env.ARTICLES_BUCKET })
@@ -109,8 +110,10 @@ app.post('/api/articles', async (c) => {
       category_id,
     })
 
-    // Invalidate KV cache for new article
-    await c.env.ARTICLE_CACHE.delete(`article:${articleId}:meta`)
+    await Promise.all([
+      c.env.ARTICLE_CACHE.delete(`article:${articleId}:meta`),
+      c.env.ARTICLE_CACHE.delete('articles:list:v1'),
+    ])
 
     return c.json({ id: articleId }, 201)
   } catch (error) {
@@ -138,8 +141,10 @@ app.put('/api/articles/:id', async (c) => {
       return c.json({ error: 'Article not found' }, 404)
     }
 
-    // Invalidate KV cache for updated article
-    await c.env.ARTICLE_CACHE.delete(`article:${id}:meta`)
+    await Promise.all([
+      c.env.ARTICLE_CACHE.delete(`article:${id}:meta`),
+      c.env.ARTICLE_CACHE.delete('articles:list:v1'),
+    ])
 
     return c.json({ article })
   } catch (error) {
@@ -157,6 +162,8 @@ app.delete('/api/articles/:id', async (c) => {
     if (!success) {
       return c.json({ error: 'Article not found' }, 404)
     }
+
+    await c.env.ARTICLE_CACHE.delete('articles:list:v1')
 
     return c.json({ success: true, message: `Article ${id} moved to trash` })
   } catch (error) {
@@ -248,6 +255,18 @@ app.post('/api/tags/bulk-delete', async (c) => {
   } catch (error) {
     console.error('Error bulk deleting tags:', error)
     return c.json({ error: 'Failed to bulk delete tags' }, 500)
+  }
+})
+
+// POST /api/admin/fts-rebuild - FTSインデックス再構築（R2本文含む）
+app.post('/api/admin/fts-rebuild', async (c) => {
+  try {
+    const storage = new ArticleStorage({ bucket: c.env.ARTICLES_BUCKET })
+    const synced = await rebuildFts(c.env.DB, storage)
+    return c.json({ success: true, synced })
+  } catch (error) {
+    console.error('Error rebuilding FTS:', error)
+    return c.json({ error: 'Failed to rebuild FTS index' }, 500)
   }
 })
 

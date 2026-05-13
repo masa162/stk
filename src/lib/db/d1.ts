@@ -13,8 +13,9 @@ interface ArticleMetaCache {
   excerpt: string | null;
 }
 
-// KV cache TTL: 7 days (in seconds)
 const KV_TTL = 60 * 60 * 24 * 7;
+const LIST_CACHE_KEY = 'articles:list:v1';
+const LIST_CACHE_TTL = 10 * 60;
 
 interface ArticleTagRow {
   article_id: number;
@@ -35,6 +36,13 @@ interface CategoryRow {
  * Optimized: KV cache for thumbnail/excerpt, batch DB queries
  */
 export async function getArticles(db: D1Database, storage: ArticleStorage, kv?: KVNamespace): Promise<ArticleMetadata[]> {
+  if (kv) {
+    try {
+      const cached = await kv.get(LIST_CACHE_KEY, 'json') as ArticleMetadata[] | null;
+      if (cached !== null) return cached;
+    } catch (_) {}
+  }
+
   // Fetch metadata only (exclude content column)
   const { results } = await db
     .prepare(
@@ -181,6 +189,10 @@ export async function getArticles(db: D1Database, storage: ArticleStorage, kv?: 
     })
   );
 
+  if (kv) {
+    kv.put(LIST_CACHE_KEY, JSON.stringify(articles), { expirationTtl: LIST_CACHE_TTL }).catch(() => {});
+  }
+
   return articles;
 }
 
@@ -262,6 +274,13 @@ export async function createArticle(
     await updateArticleTags(db, articleId, tags);
   }
 
+  // 5. Sync to FTS
+  await db
+    .prepare('INSERT INTO articles_fts(rowid, title, memo, body) VALUES(?, ?, ?, ?)')
+    .bind(articleId, title ?? '', memo ?? '', content ?? '')
+    .run()
+    .catch(() => {});
+
   return articleId;
 }
 
@@ -323,6 +342,21 @@ export async function updateArticle(
     await updateArticleTags(db, id, tags);
   }
 
+  // Sync to FTS
+  const existingRow = existing.results[0] as any;
+  let ftsBody = content;
+  if (ftsBody === undefined && existingRow.content_key) {
+    ftsBody = await storage.getContent(existingRow.content_key) ?? '';
+  }
+  const ftsTitle = title ?? existingRow.title ?? '';
+  const ftsMemo = memo ?? existingRow.memo ?? '';
+  await db.prepare('DELETE FROM articles_fts WHERE rowid = ?').bind(id).run().catch(() => {});
+  await db
+    .prepare('INSERT INTO articles_fts(rowid, title, memo, body) VALUES(?, ?, ?, ?)')
+    .bind(id, ftsTitle, ftsMemo, ftsBody ?? '')
+    .run()
+    .catch(() => {});
+
   // Return updated article
   return await getArticleById(db, storage, id);
 }
@@ -339,7 +373,8 @@ export async function deleteArticle(
     .bind(id)
     .run();
 
-  // Note: R2 content is NOT deleted to allow restoration
+  await db.prepare('DELETE FROM articles_fts WHERE rowid = ?').bind(id).run().catch(() => {});
+
   return meta.changes > 0;
 }
 
@@ -427,65 +462,106 @@ export async function getTags(db: D1Database): Promise<Tag[]> {
 }
 
 /**
- * Search articles by query (metadata only)
+ * Search articles by query — FTS5 full-text (title + memo + body), LIKE fallback for short queries
  */
 export async function searchArticles(
   db: D1Database,
   query: string
 ): Promise<ArticleMetadata[]> {
-  const searchTerm = `%${query}%`;
+  let articleIds: number[] = [];
 
-  const { results } = await db
-    .prepare(
-      `
-      SELECT
-        id, title, content_key, content_size, content_hash, memo,
-        created_at, updated_at, deleted_at
-      FROM articles
-      WHERE deleted_at IS NULL
-        AND (title LIKE ? OR memo LIKE ?)
-      ORDER BY created_at DESC
-    `
-    )
-    .bind(searchTerm, searchTerm)
-    .all();
+  if (query.length >= 3) {
+    try {
+      const ftsQuery = `"${query.replace(/"/g, '""')}"`;
+      const { results: ftsResults } = await db
+        .prepare('SELECT rowid FROM articles_fts WHERE articles_fts MATCH ? ORDER BY rank')
+        .bind(ftsQuery)
+        .all();
+      articleIds = ftsResults.map((r: any) => r.rowid as number);
+    } catch (_) {
+      // fall through to LIKE
+    }
+  }
 
-  const articles = results as unknown as ArticleMetadata[];
-  const articleIds = articles.map((a) => a.id);
+  let articles: ArticleMetadata[];
 
-  if (articleIds.length === 0) return [];
+  if (articleIds.length > 0) {
+    const placeholders = articleIds.map(() => '?').join(',');
+    const { results } = await db
+      .prepare(
+        `SELECT id, title, content_key, content_size, content_hash, memo,
+                category_id, created_at, updated_at, deleted_at
+         FROM articles
+         WHERE id IN (${placeholders}) AND deleted_at IS NULL
+         ORDER BY created_at DESC`
+      )
+      .bind(...articleIds)
+      .all();
+    articles = results as unknown as ArticleMetadata[];
+  } else {
+    const searchTerm = `%${query}%`;
+    const { results } = await db
+      .prepare(
+        `SELECT id, title, content_key, content_size, content_hash, memo,
+                category_id, created_at, updated_at, deleted_at
+         FROM articles
+         WHERE deleted_at IS NULL AND (title LIKE ? OR memo LIKE ?)
+         ORDER BY created_at DESC`
+      )
+      .bind(searchTerm, searchTerm)
+      .all();
+    articles = results as unknown as ArticleMetadata[];
+  }
 
-  // Batch load tags
-  const placeholders = articleIds.map(() => "?").join(",");
+  if (articles.length === 0) return [];
+
+  const ids = articles.map((a) => a.id);
+  const placeholders = ids.map(() => '?').join(',');
   const { results: tagResults } = await db
     .prepare(
-      `
-      SELECT at.article_id, t.id, t.name, t.created_at
-      FROM article_tags at
-      INNER JOIN tags t ON at.tag_id = t.id
-      WHERE at.article_id IN (${placeholders})
-    `
+      `SELECT at.article_id, t.id, t.name, t.created_at
+       FROM article_tags at
+       INNER JOIN tags t ON at.tag_id = t.id
+       WHERE at.article_id IN (${placeholders})`
     )
-    .bind(...articleIds)
+    .bind(...ids)
     .all();
 
   const tagMap = new Map<number, Tag[]>();
   for (const row of tagResults as any[]) {
-    if (!tagMap.has(row.article_id)) {
-      tagMap.set(row.article_id, []);
-    }
-    tagMap.get(row.article_id)!.push({
-      id: row.id,
-      name: row.name,
-      created_at: row.created_at,
-    });
+    if (!tagMap.has(row.article_id)) tagMap.set(row.article_id, []);
+    tagMap.get(row.article_id)!.push({ id: row.id, name: row.name, created_at: row.created_at });
   }
-
   for (const article of articles) {
     article.tags = tagMap.get(article.id) || [];
   }
 
   return articles;
+}
+
+/**
+ * Rebuild FTS index from R2 content — run once after migration, or to resync
+ */
+export async function rebuildFts(db: D1Database, storage: ArticleStorage): Promise<number> {
+  const { results } = await db
+    .prepare('SELECT id, title, memo, content_key FROM articles WHERE deleted_at IS NULL')
+    .all();
+
+  let synced = 0;
+  await Promise.all(
+    (results as any[]).map(async (row) => {
+      const body = row.content_key ? (await storage.getContent(row.content_key)) ?? '' : '';
+      await db.prepare('DELETE FROM articles_fts WHERE rowid = ?').bind(row.id).run().catch(() => {});
+      await db
+        .prepare('INSERT INTO articles_fts(rowid, title, memo, body) VALUES(?, ?, ?, ?)')
+        .bind(row.id, row.title ?? '', row.memo ?? '', body)
+        .run()
+        .catch(() => {});
+      synced++;
+    })
+  );
+
+  return synced;
 }
 
 /**
