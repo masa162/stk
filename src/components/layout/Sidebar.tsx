@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCategories } from '../../hooks/useCategories'
+import { useArticles } from '../../hooks/useArticles'
 
 interface Tag {
   id: number
@@ -22,6 +23,48 @@ export default function Sidebar({
   tags,
 }: SidebarProps) {
   const { data: categories = [] } = useCategories()
+  const { data: articles = [] } = useArticles()
+  const navigate = useNavigate()
+
+  const handleRandom = () => {
+    if (articles.length === 0) return
+    const pick = articles[Math.floor(Math.random() * articles.length)]
+    navigate(`/articles/${pick.id}`)
+  }
+
+  const handleTodayInHistory = () => {
+    const today = new Date()
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    const currentYear = today.getFullYear()
+
+    const sameDay = articles.filter((a) => {
+      const d = new Date(a.created_at)
+      if (d.getFullYear() >= currentYear) return false
+      return (
+        String(d.getMonth() + 1).padStart(2, '0') === mm &&
+        String(d.getDate()).padStart(2, '0') === dd
+      )
+    })
+
+    if (sameDay.length > 0) {
+      navigate(`/articles/${sameDay[Math.floor(Math.random() * sameDay.length)].id}`)
+      return
+    }
+
+    // 同日なければ同月の過去記事からランダム
+    const sameMonth = articles.filter((a) => {
+      const d = new Date(a.created_at)
+      return (
+        d.getFullYear() < currentYear &&
+        String(d.getMonth() + 1).padStart(2, '0') === mm
+      )
+    })
+
+    if (sameMonth.length > 0) {
+      navigate(`/articles/${sameMonth[Math.floor(Math.random() * sameMonth.length)].id}`)
+    }
+  }
 
   return (
     <div className="w-64 bg-gray-900 text-white h-screen flex flex-col overflow-y-auto">
@@ -67,6 +110,23 @@ export default function Sidebar({
         >
           ゴミ箱
         </Link>
+      </div>
+
+      {/* Discovery */}
+      <div className="p-4 space-y-2 border-b border-gray-700">
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">発見</h3>
+        <button
+          onClick={handleRandom}
+          className="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-center transition-colors text-sm"
+        >
+          🎲 ランダム
+        </button>
+        <button
+          onClick={handleTodayInHistory}
+          className="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-center transition-colors text-sm"
+        >
+          📅 今日は何の日
+        </button>
       </div>
 
       {/* Admin Menu */}
