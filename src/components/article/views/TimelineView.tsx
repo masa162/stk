@@ -19,12 +19,18 @@ interface TimelineViewProps {
   onMobileSidebarOpen: () => void
 }
 
-function formatMonthKey(dateStr: string): string {
-  const d = new Date(dateStr)
-  return `${d.getFullYear()}年${d.getMonth() + 1}月`
+function getYear(dateStr: string) {
+  return String(new Date(dateStr).getFullYear())
 }
-
-function formatDay(dateStr: string): string {
+function getMonthKey(dateStr: string) {
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+function formatMonthLabel(key: string) {
+  const [, m] = key.split('-')
+  return `${parseInt(m)}月`
+}
+function formatDay(dateStr: string) {
   const d = new Date(dateStr)
   return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
 }
@@ -44,6 +50,27 @@ export default function TimelineView({
   const { data: selectedArticle, isLoading: loadingArticle } = useArticle(selectedArticleId)
   const deleteArticleMutation = useDeleteArticle()
 
+  const currentYear = String(new Date().getFullYear())
+  const currentMonthKey = getMonthKey(new Date().toISOString())
+
+  const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set())
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set())
+
+  const toggleYear = (year: string) => {
+    setCollapsedYears((prev) => {
+      const next = new Set(prev)
+      next.has(year) ? next.delete(year) : next.add(year)
+      return next
+    })
+  }
+  const toggleMonth = (key: string) => {
+    setCollapsedMonths((prev) => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
   const filtered = useMemo(() => {
     if (!searchKeyword.trim()) return articles
     const kw = searchKeyword.toLowerCase()
@@ -52,14 +79,18 @@ export default function TimelineView({
     )
   }, [articles, searchKeyword])
 
+  // Build: year → monthKey → articles[]
   const grouped = useMemo(() => {
-    const map = new Map<string, ArticleMetadata[]>()
+    const yearMap = new Map<string, Map<string, ArticleMetadata[]>>()
     for (const article of filtered) {
-      const key = formatMonthKey(article.created_at)
-      if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(article)
+      const year = getYear(article.created_at)
+      const mKey = getMonthKey(article.created_at)
+      if (!yearMap.has(year)) yearMap.set(year, new Map())
+      const monthMap = yearMap.get(year)!
+      if (!monthMap.has(mKey)) monthMap.set(mKey, [])
+      monthMap.get(mKey)!.push(article)
     }
-    return map
+    return yearMap
   }, [filtered])
 
   const handleClick = (article: ArticleMetadata) => {
@@ -99,11 +130,11 @@ export default function TimelineView({
   return (
     <>
       {/* Timeline List Pane */}
-      <aside className="w-full md:w-96 lg:w-2/5 bg-white border-r overflow-y-auto flex flex-col">
+      <aside className="w-full md:w-80 lg:w-96 bg-white border-r overflow-y-auto flex flex-col">
         <MobileHeader onMenuClick={onMobileSidebarOpen} title="タイムライン" />
 
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center gap-3">
           <input
             type="text"
             value={searchKeyword}
@@ -114,60 +145,95 @@ export default function TimelineView({
           <ViewSwitcher viewMode={viewMode} onViewModeChange={onViewModeChange} />
         </div>
 
-        {/* Timeline */}
-        <div className="flex-1">
+        {/* Tree */}
+        <div className="flex-1 py-2">
           {grouped.size === 0 ? (
             <div className="text-center py-12 text-gray-400 text-sm">記事がありません</div>
           ) : (
-            Array.from(grouped.entries()).map(([month, monthArticles]) => (
-              <div key={month}>
-                {/* Month Header */}
-                <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 border-b border-t sticky top-14 z-[5]">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{month}</span>
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span className="text-xs text-gray-400">{monthArticles.length}件</span>
-                </div>
+            Array.from(grouped.entries()).map(([year, monthMap]) => {
+              const yearTotal = Array.from(monthMap.values()).reduce((s, a) => s + a.length, 0)
+              const yearCollapsed = collapsedYears.has(year)
 
-                {/* Articles in this month */}
-                <div className="divide-y divide-gray-100">
-                  {monthArticles.map((article) => (
-                    <div
-                      key={article.id}
-                      onClick={() => handleClick(article)}
-                      className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedArticleId === article.id
-                          ? 'bg-blue-50 border-l-2 border-l-blue-500'
-                          : 'border-l-2 border-l-transparent'
-                      }`}
-                    >
-                      <span className="text-xs text-gray-400 pt-0.5 w-10 shrink-0 font-mono">
-                        {formatDay(article.created_at)}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 leading-snug truncate">
-                          {article.title}
-                        </p>
-                        {article.memo && (
-                          <p className="text-xs text-gray-500 mt-0.5 truncate">{article.memo}</p>
-                        )}
-                        {article.tags && article.tags.length > 0 && (
-                          <div className="flex gap-1 mt-1 flex-wrap">
-                            {article.tags.slice(0, 3).map((tag) => (
-                              <span
-                                key={tag.id}
-                                className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded"
-                              >
-                                {tag.name}
+              return (
+                <div key={year}>
+                  {/* Year row */}
+                  <button
+                    onClick={() => toggleYear(year)}
+                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <span className="text-gray-400 text-xs w-3 shrink-0">
+                      {yearCollapsed ? '▶' : '▼'}
+                    </span>
+                    <span className="font-bold text-sm text-gray-800">{year}年</span>
+                    <span className="text-xs text-gray-400 ml-auto">({yearTotal})</span>
+                  </button>
+
+                  {!yearCollapsed && (
+                    <div className="ml-3">
+                      {Array.from(monthMap.entries()).map(([mKey, monthArticles]) => {
+                        const monthCollapsed = collapsedMonths.has(mKey)
+                        const isCurrentMonth = mKey === currentMonthKey
+
+                        return (
+                          <div key={mKey}>
+                            {/* Month row */}
+                            <button
+                              onClick={() => toggleMonth(mKey)}
+                              className={`w-full flex items-center gap-2 px-4 py-1.5 hover:bg-gray-50 transition-colors text-left ${
+                                isCurrentMonth ? 'text-blue-600' : ''
+                              }`}
+                            >
+                              <span className="text-gray-400 text-xs w-3 shrink-0">
+                                {monthCollapsed ? '▶' : '▼'}
                               </span>
-                            ))}
+                              <span className={`text-sm ${isCurrentMonth ? 'font-semibold text-blue-600' : 'text-gray-600'}`}>
+                                {formatMonthLabel(mKey)}
+                              </span>
+                              <span className="text-xs text-gray-400 ml-auto">({monthArticles.length})</span>
+                            </button>
+
+                            {/* Articles */}
+                            {!monthCollapsed && (
+                              <div className="ml-3 border-l border-gray-100">
+                                {monthArticles.map((article) => (
+                                  <div
+                                    key={article.id}
+                                    onClick={() => handleClick(article)}
+                                    className={`flex gap-2 px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors ${
+                                      selectedArticleId === article.id
+                                        ? 'bg-blue-50 border-l-2 border-l-blue-500 -ml-px'
+                                        : ''
+                                    }`}
+                                  >
+                                    <span className="text-xs text-gray-400 pt-0.5 shrink-0 font-mono w-9">
+                                      {formatDay(article.created_at).slice(3)}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-gray-800 leading-snug line-clamp-2">
+                                        {article.title}
+                                      </p>
+                                      {article.tags && article.tags.length > 0 && (
+                                        <div className="flex gap-1 mt-0.5 flex-wrap">
+                                          {article.tags.slice(0, 2).map((tag) => (
+                                            <span key={tag.id} className="text-xs px-1 py-0 bg-blue-100 text-blue-700 rounded">
+                                              {tag.name}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        )
+                      })}
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </aside>
@@ -186,24 +252,9 @@ export default function TimelineView({
                 {selectedArticle.title}
               </h1>
               <div className="flex gap-2">
-                <button
-                  onClick={handleExportMarkdown}
-                  className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
-                >
-                  MD出力
-                </button>
-                <button
-                  onClick={() => navigate(`/articles/${selectedArticle.id}/edit`)}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                >
-                  編集
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                >
-                  削除
-                </button>
+                <button onClick={handleExportMarkdown} className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-xs">MD出力</button>
+                <button onClick={() => navigate(`/articles/${selectedArticle.id}/edit`)} className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs">編集</button>
+                <button onClick={handleDelete} className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-xs">削除</button>
               </div>
               {selectedArticle.memo && (
                 <div className="p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded text-sm text-gray-700">
@@ -213,15 +264,11 @@ export default function TimelineView({
               {selectedArticle.tags && selectedArticle.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {selectedArticle.tags.map((tag) => (
-                    <span key={tag.id} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
-                      {tag.name}
-                    </span>
+                    <span key={tag.id} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">{tag.name}</span>
                   ))}
                 </div>
               )}
-              <p className="text-xs text-gray-400">
-                {new Date(selectedArticle.created_at).toLocaleString('ja-JP')}
-              </p>
+              <p className="text-xs text-gray-400">{new Date(selectedArticle.created_at).toLocaleString('ja-JP')}</p>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               <MarkdownRenderer content={selectedArticle.content || ''} />
