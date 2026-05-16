@@ -1,4 +1,4 @@
-export type ViewMode = 'gmail' | 'table' | 'card'
+export type ViewMode = 'gmail' | 'table' | 'card' | 'timeline'
 
 interface ViewSwitcherProps {
   viewMode: ViewMode
@@ -40,6 +40,17 @@ export default function ViewSwitcher({ viewMode, onViewModeChange }: ViewSwitche
         title="カードビュー"
       >
         🎴 カード
+      </button>
+      <button
+        onClick={() => onViewModeChange('timeline')}
+        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+          viewMode === 'timeline'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+        title="タイムラインビュー"
+      >
+        📅 Timeline
       </button>
     </div>
   )

@@ -8,6 +8,7 @@ import CardView from '../components/article/views/CardView'
 import { useArticles } from '../hooks/useArticles'
 import { useTags } from '../hooks/useTags'
 import { useDragDrop } from '../hooks/useDragDrop'
+import TimelineView from '../components/article/views/TimelineView'
 import type { ViewMode } from '../components/common/ViewSwitcher'
 
 const ITEMS_PER_PAGE = 20
@@ -183,6 +184,18 @@ export default function ArticleList() {
         <CardView
           {...commonViewProps}
           articles={paginatedArticles}
+        />
+      )}
+
+      {/* Timeline View */}
+      {viewMode === 'timeline' && (
+        <TimelineView
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          articles={sortedArticles}
+          searchKeyword={searchKeyword}
+          onSearchChange={setSearchKeyword}
+          onMobileSidebarOpen={() => setMobileSidebarOpen(true)}
         />
       )}
 
