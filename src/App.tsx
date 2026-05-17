@@ -7,7 +7,6 @@ import ArticleEdit from './pages/ArticleEdit'
 import Trash from './pages/Trash'
 import Search from './pages/Search'
 import Tags from './pages/Tags'
-import AdminCategories from './pages/AdminCategories'
 import AdminTags from './pages/AdminTags'
 import Quick from './pages/Quick'
 import { ToastProvider } from './contexts/ToastContext'
@@ -36,7 +35,6 @@ function App() {
             <Route path="/trash" element={<Trash />} />
             <Route path="/search" element={<Search />} />
             <Route path="/tags" element={<Tags />} />
-            <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/tags" element={<AdminTags />} />
             <Route path="/quick" element={<Quick />} />
           </Routes>

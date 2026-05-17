@@ -1,5 +1,4 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useCategories } from '../../hooks/useCategories'
 import { useArticles } from '../../hooks/useArticles'
 
 interface Tag {
@@ -8,21 +7,16 @@ interface Tag {
 }
 
 interface SidebarProps {
-  selectedCategoryId: number | null
   selectedTagId: number | null
-  onCategorySelect: (id: number | null) => void
   onTagSelect: (id: number | null) => void
   tags: Tag[]
 }
 
 export default function Sidebar({
-  selectedCategoryId,
   selectedTagId,
-  onCategorySelect,
   onTagSelect,
   tags,
 }: SidebarProps) {
-  const { data: categories = [] } = useCategories()
   const { data: articles = [] } = useArticles()
   const navigate = useNavigate()
 
@@ -140,48 +134,6 @@ export default function Sidebar({
         >
           タグ管理
         </Link>
-        <Link
-          to="/admin/categories"
-          className="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-center transition-colors text-sm"
-        >
-          カテゴリ管理
-        </Link>
-      </div>
-
-      {/* Category Filter */}
-      <div className="p-4 border-b border-gray-700">
-        <h3 className="text-sm font-semibold mb-3 text-gray-400 uppercase">
-          カテゴリ
-        </h3>
-        <div className="space-y-1">
-          <button
-            onClick={() => onCategorySelect(null)}
-            className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-              selectedCategoryId === null
-                ? 'bg-blue-600'
-                : 'hover:bg-gray-800'
-            }`}
-          >
-            すべて
-          </button>
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => onCategorySelect(category.id)}
-              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 ${
-                selectedCategoryId === category.id
-                  ? 'bg-blue-600'
-                  : 'hover:bg-gray-800'
-              }`}
-            >
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: category.color }}
-              />
-              <span className="truncate">{category.name}</span>
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Tag Filter */}

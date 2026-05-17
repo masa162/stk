@@ -27,7 +27,6 @@ export default function ArticleList() {
   })
 
   // Filters
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null)
 
   // Handle navigation state (from Tags page)
@@ -55,9 +54,6 @@ export default function ArticleList() {
   // Filtering with useMemo for performance
   const filteredArticles = useMemo(() => {
     return articles.filter((article) => {
-      if (selectedCategoryId !== null && article.category_id !== selectedCategoryId) {
-        return false
-      }
       if (selectedTagId !== null) {
         const hasTag = article.tags?.some((tag) => tag.id === selectedTagId)
         if (!hasTag) return false
@@ -70,7 +66,7 @@ export default function ArticleList() {
       }
       return true
     })
-  }, [articles, selectedCategoryId, selectedTagId, searchKeyword])
+  }, [articles, selectedTagId, searchKeyword])
 
   // Sorting with useMemo for performance
   const sortedArticles = useMemo(() => {
@@ -148,9 +144,7 @@ export default function ArticleList() {
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar
-          selectedCategoryId={selectedCategoryId}
           selectedTagId={selectedTagId}
-          onCategorySelect={setSelectedCategoryId}
           onTagSelect={setSelectedTagId}
           tags={allTags}
         />
@@ -208,12 +202,7 @@ export default function ArticleList() {
           />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[80%]">
             <Sidebar
-              selectedCategoryId={selectedCategoryId}
               selectedTagId={selectedTagId}
-              onCategorySelect={(id) => {
-                setSelectedCategoryId(id)
-                setMobileSidebarOpen(false)
-              }}
               onTagSelect={(id) => {
                 setSelectedTagId(id)
                 setMobileSidebarOpen(false)
