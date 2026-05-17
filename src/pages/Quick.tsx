@@ -46,12 +46,12 @@ export default function Quick() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col pb-16">
       <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
         <Link to="/" className="text-gray-500 hover:text-white text-sm transition-colors">
           ← STK
         </Link>
-        <span className="text-gray-700 text-xs">⌘ Enter to save</span>
+        <span className="text-gray-700 text-xs hidden md:block">⌘ Enter to save</span>
       </header>
 
       <div className="flex-1 max-w-2xl mx-auto w-full px-6 py-8 flex flex-col gap-4">
@@ -69,11 +69,11 @@ export default function Quick() {
           onChange={(e) => setContent(e.target.value)}
           placeholder="..."
           className="flex-1 w-full bg-transparent border-none outline-none text-gray-300 placeholder-gray-800 resize-none text-base leading-relaxed"
-          style={{ minHeight: '60vh' }}
+          style={{ minHeight: '40vh' }}
         />
       </div>
 
-      <footer className="px-6 py-4 border-t border-gray-800 flex items-center justify-end gap-4">
+      <footer className="fixed bottom-0 left-0 right-0 px-6 py-3 border-t border-gray-800 bg-gray-950 flex items-center justify-end gap-4">
         {saved && <span className="text-green-400 text-sm animate-pulse">Saved ✓</span>}
         <button
           onClick={handleSave}
