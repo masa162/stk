@@ -146,6 +146,12 @@ tags: ${article.tags?.map((t) => t.name).join(', ') || ''}
                 MD出力
               </button>
               <button
+                onClick={() => copyToClipboard(article.content || '')}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
+              >
+                本文コピー
+              </button>
+              <button
                 onClick={() => navigate(`/articles/${article.id}/edit`)}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
               >
