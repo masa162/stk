@@ -46,6 +46,7 @@ export default function CardView({
         {/* Search Field */}
         <div className="mb-4">
           <input
+            id="stk-search-input"
             type="text"
             value={searchKeyword}
             onChange={(e) => onSearchChange(e.target.value)}

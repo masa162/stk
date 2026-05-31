@@ -136,6 +136,7 @@ export default function TimelineView({
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center gap-3">
           <input
+            id="stk-search-input"
             type="text"
             value={searchKeyword}
             onChange={(e) => onSearchChange(e.target.value)}

@@ -33,6 +33,7 @@ export default function ArticleListHeader({
       {/* Search Field */}
       <div className="mb-3">
         <input
+          id="stk-search-input"
           type="text"
           value={searchKeyword}
           onChange={(e) => onSearchChange(e.target.value)}

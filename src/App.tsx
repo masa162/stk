@@ -33,8 +33,12 @@ function GlobalShortcuts() {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 
-      if (lastKey.current === 'g' && e.key === 'h') {
-        navigate('/')
+      if (lastKey.current === 'g') {
+        if (e.key === 'h') navigate('/')
+        if (e.key === 'n') navigate('/articles/new')
+        if (e.key === 's') navigate('/search')
+        if (e.key === 't') navigate('/tags')
+        if (e.key === 'q') navigate('/quick')
       }
 
       lastKey.current = e.key

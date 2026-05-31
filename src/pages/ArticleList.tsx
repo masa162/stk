@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar'
 import ScrollTop from '../components/common/ScrollTop'
@@ -99,6 +99,28 @@ export default function ArticleList() {
   const handleSortDirectionToggle = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
   }
+
+  const viewModeMap: Record<string, ViewMode> = { m: 'gmail', t: 'table', c: 'card', l: 'timeline' }
+
+  const handleKeyboardShortcuts = useCallback((e: KeyboardEvent) => {
+    const tag = (e.target as HTMLElement).tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+    const key = e.key.toLowerCase()
+    if (viewModeMap[key]) {
+      handleViewModeChange(viewModeMap[key])
+      return
+    }
+    if (key === 'f') {
+      e.preventDefault()
+      document.getElementById('stk-search-input')?.focus()
+    }
+  }, [viewMode])
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyboardShortcuts)
+    return () => window.removeEventListener('keydown', handleKeyboardShortcuts)
+  }, [handleKeyboardShortcuts])
 
   if (loading) {
     return (
